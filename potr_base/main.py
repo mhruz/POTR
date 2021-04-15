@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 import potr_base.util.misc as utils
 from potr_base.engine import evaluate, train_one_epoch
 from potr_base.models import build_model
-from datasets import HPOESAdvancedDataset
+from dataset import HPOESAdvancedDataset
 
 
 def get_args_parser():
