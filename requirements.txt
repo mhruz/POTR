@@ -4,3 +4,8 @@ einops==0.3.0
 h5py==3.2.1
 numpy
 matplotlib
+tqdm
+pandas
+seaborn
+scipy
+cython

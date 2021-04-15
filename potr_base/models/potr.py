@@ -32,7 +32,7 @@ class POTR(nn.Module):
 
         hidden_dim = transformer.d_model
 
-        self.coords_embed = MLP(hidden_dim, hidden_dim, 3, 1)
+        self.coords_embed = MLP(hidden_dim, 3)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
@@ -106,18 +106,6 @@ class SetCriterion(nn.Module):
 
         return losses
 
-    def _get_src_permutation_idx(self, indices):
-        # permute predictions following indices
-        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
-        src_idx = torch.cat([src for (src, _) in indices])
-        return batch_idx, src_idx
-
-    def _get_tgt_permutation_idx(self, indices):
-        # permute targets following indices
-        batch_idx = torch.cat([torch.full_like(tgt, i) for i, (_, tgt) in enumerate(indices)])
-        tgt_idx = torch.cat([tgt for (_, tgt) in indices])
-        return batch_idx, tgt_idx
-
     def get_loss(self, loss, outputs, targets, **kwargs):
         loss_map = {
             'coords': self.loss_coords
@@ -141,7 +129,7 @@ class SetCriterion(nn.Module):
 class MLP(nn.Module):
     """ Very simple multi-layer perceptron (also called FFN)"""
 
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+    def __init__(self, input_dim, output_dim):
         super().__init__()
         self.linear = nn.Linear(input_dim, output_dim)
 
@@ -162,8 +150,8 @@ def build(args):
     )
 
     weight_dict = {"loss_coords": 1}
-
     losses = ['coords']
+
     criterion = SetCriterion(args.num_queries, weight_dict=weight_dict, losses=losses)
     criterion.to(device)
 
