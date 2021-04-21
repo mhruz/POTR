@@ -55,7 +55,7 @@ class DeformableDETR(nn.Module):
 
         hidden_dim = transformer.d_model
 
-        self.bbox_embed = MLP(hidden_dim, 3)
+        self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 1)
         self.num_feature_levels = num_feature_levels
 
         if not two_stage:
@@ -281,12 +281,16 @@ class PostProcess(nn.Module):
 class MLP(nn.Module):
     """ Very simple multi-layer perceptron (also called FFN)"""
 
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
         super().__init__()
-        self.linear = nn.Linear(input_dim, output_dim)
+        self.num_layers = num_layers
+        h = [hidden_dim] * (num_layers - 1)
+        self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
 
     def forward(self, x):
-        return self.linear(x)
+        for i, layer in enumerate(self.layers):
+            x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
+        return x
 
 
 def build(args):
