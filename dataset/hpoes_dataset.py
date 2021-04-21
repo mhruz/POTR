@@ -7,7 +7,7 @@ import random
 import numpy as np
 import torch.utils.data as torch_data
 
-from datasets.dataset_processing import load_hpoes_data
+from dataset.dataset_processing import load_hpoes_data
 
 
 class HPOESDataset:
