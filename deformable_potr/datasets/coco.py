@@ -164,6 +164,6 @@ def build(image_set, args):
     }
 
     img_folder, ann_file = PATHS[image_set]
-    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks,
+    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=False,
                             cache_mode=args.cache_mode, local_rank=get_local_rank(), local_size=get_local_size())
     return dataset

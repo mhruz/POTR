@@ -102,6 +102,6 @@ def build(image_set, args):
     ann_file = ann_folder_root / ann_file
 
     dataset = CocoPanoptic(img_folder_path, ann_folder, ann_file,
-                           transforms=make_coco_transforms(image_set), return_masks=args.masks)
+                           transforms=make_coco_transforms(image_set), return_masks=False)
 
     return dataset
