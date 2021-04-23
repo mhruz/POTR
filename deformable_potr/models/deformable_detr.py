@@ -55,7 +55,7 @@ class DeformableDETR(nn.Module):
 
         hidden_dim = transformer.d_model
 
-        self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 1)
+        self.bbox_embed = MLP(hidden_dim, hidden_dim, 3, 1)
         self.num_feature_levels = num_feature_levels
 
         if not two_stage:
