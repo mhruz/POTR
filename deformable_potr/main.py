@@ -103,7 +103,7 @@ def get_args_parser():
                         type=str, help="Path to the evaluation dataset H5 file.")
 
     parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
-    parser.add_argument('--device', default='cpu', help="Device to be used for training and testing")
+    parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
@@ -165,13 +165,11 @@ def main(args):
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)
 
-    data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
-                                   collate_fn=utils.collate_fn, num_workers=args.num_workers,
+    data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train, num_workers=args.num_workers,
                                    pin_memory=True)
     if args.eval:
-        data_loader_eval = DataLoader(dataset_eval, args.batch_size, sampler=sampler_eval,
-                                      drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers,
-                                      pin_memory=True)
+        data_loader_eval = DataLoader(dataset_eval, args.batch_size, sampler=sampler_eval, drop_last=False,
+                                      num_workers=args.num_workers, pin_memory=True)
 
     # lr_backbone_names = ["backbone.0", "backbone.neck", "input_proj", "transformer.encoder"]
 
