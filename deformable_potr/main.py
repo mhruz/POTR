@@ -26,7 +26,7 @@ from dataset import HPOESAdvancedDataset
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('Deformable DETR Detector', add_help=False)
+    parser = argparse.ArgumentParser('Deformable POTR Module', add_help=False)
     parser.add_argument('--lr', default=2e-4, type=float)
     parser.add_argument('--lr_backbone_names', default=["backbone.0"], type=str, nargs='+')
     parser.add_argument('--lr_backbone', default=2e-5, type=float)
@@ -105,7 +105,7 @@ def get_args_parser():
     parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--resume', default='', help='Resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
     parser.add_argument('--eval', action='store_true', help="Determines whether to perform evaluatin on each epoch.")
     parser.add_argument('--num_workers', default=1, type=int)

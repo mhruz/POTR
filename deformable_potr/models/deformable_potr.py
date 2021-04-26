@@ -32,11 +32,11 @@ def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
-class DeformableDETR(nn.Module):
-    """ This is the Deformable DETR module that performs object detection """
+class DeformablePOTR(nn.Module):
+    """ Deformable POTR module for joint coordinates regression """
 
-    def __init__(self, backbone, transformer, num_queries, num_feature_levels, aux_loss=True,
-                 with_box_refine=False, two_stage=False):
+    def __init__(self, backbone, transformer, num_queries, num_feature_levels, aux_loss=True, with_box_refine=False,
+                 two_stage=False):
         """ Initializes the model.
         Parameters:
             backbone: torch module of the backbone to be used. See backbone.py
@@ -91,8 +91,6 @@ class DeformableDETR(nn.Module):
         self.with_box_refine = with_box_refine
         self.two_stage = two_stage
 
-        prior_prob = 0.01
-        bias_value = -math.log((1 - prior_prob) / prior_prob)
         nn.init.constant_(self.bbox_embed.layers[-1].weight.data, 0)
         nn.init.constant_(self.bbox_embed.layers[-1].bias.data, 0)
 
@@ -169,9 +167,6 @@ class DeformableDETR(nn.Module):
             else:
                 reference = inter_references[lvl - 1]
 
-            # This might be problematic
-            # reference = inverse_sigmoid(reference)
-
             tmp = self.bbox_embed[lvl](hs[lvl])
             if reference.shape[-1] == 4:
                 tmp += reference
@@ -188,7 +183,7 @@ class DeformableDETR(nn.Module):
 
 
 class SetCriterion(nn.Module):
-    """ This class computes the loss for DETR.
+    """ This class computes the loss for POTR.
     The process happens in two steps:
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
@@ -299,7 +294,7 @@ def build(args):
     backbone = build_backbone(args)
     transformer = build_deforamble_transformer(args)
 
-    model = DeformableDETR(
+    model = DeformablePOTR(
         backbone,
         transformer,
         num_queries=args.num_queries,
