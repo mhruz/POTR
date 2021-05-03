@@ -24,7 +24,7 @@ from deformable_potr.models.backbone import build_backbone
 from deformable_potr.models.matcher import build_matcher
 from deformable_potr.models.segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
-from deformable_potr.models.deformable_transformer import build_deforamble_transformer
+from deformable_potr.models.deformable_transformer import build_deformable_transformer
 import copy
 
 
@@ -292,7 +292,7 @@ def build(args):
 
     device = torch.device(args.device)
     backbone = build_backbone(args)
-    transformer = build_deforamble_transformer(args)
+    transformer = build_deformable_transformer(args)
 
     model = DeformablePOTR(
         backbone,

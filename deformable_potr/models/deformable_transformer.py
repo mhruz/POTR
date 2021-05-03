@@ -375,7 +375,7 @@ def _get_activation_fn(activation):
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
 
 
-def build_deforamble_transformer(args):
+def build_deformable_transformer(args):
     return DeformableTransformer(
         d_model=args.hidden_dim,
         nhead=args.nheads,
