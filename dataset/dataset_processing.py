@@ -71,8 +71,7 @@ def load_encoded_hpoes_data(filename: str):
     output_depth_maps = []
     output_labels = []
 
-    # for record_index in range(len(data_file["images"])):
-    for record_index in range(10):
+    for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
         labels = data_file["labels"][record_index]
 

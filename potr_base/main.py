@@ -70,8 +70,12 @@ def get_args_parser():
                         help="giou box coefficient in the matching cost")
 
     # Parameters: Dataset
-    parser.add_argument('--train_data_path', default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5", type=str, help="Path to the training dataset H5 file.")
-    parser.add_argument('--eval_data_path', default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5", type=str, help="Path to the evaluation dataset H5 file.")
+    parser.add_argument('--train_data_path',
+                        default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5",
+                        type=str, help="Path to the training dataset H5 file.")
+    parser.add_argument('--eval_data_path',
+                        default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5",
+                        type=str, help="Path to the evaluation dataset H5 file.")
 
     parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default="cpu", help="Device to be used for training and testing")
@@ -79,9 +83,14 @@ def get_args_parser():
     parser.add_argument('--resume', default='',
                         help="HTTP address or full directory of the model to resume training on (ignored if empty)")
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help="Starting epoch index")
-    parser.add_argument('--eval', default=False, action='store_true', help="Determines whether to apply evaluatin on each epoch.")
+    parser.add_argument('--eval', default=False, action='store_true',
+                        help="Determines whether to apply evaluatin on each epoch.")
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--print_frequency', default=10, type=int, help="Print frequency of the stats during training and evaluation.")
+    parser.add_argument('--print_frequency', default=10, type=int,
+                        help="Print frequency of the stats during training and evaluation.")
+    parser.add_argument('--p_augment', default=0.5, type=float, help="Probability of applying augmentation.")
+    parser.add_argument('--encoded', default=0, type=int,
+                        help="Whether to read the encoded data (=1) or the decoded data (=0) into memory.")
 
     # Parameters: Distributed training
     parser.add_argument('--world_size', default=1, type=int, help='Number of distributed processes')
@@ -133,7 +142,8 @@ def main(args):
     # if args.eval:
     #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
 
-    dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=0.5))
+    dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+                                          encoded=args.encoded)
     if args.eval:
         dataset_eval = HPOESOberwegerDataset(args.eval_data_path)
 
