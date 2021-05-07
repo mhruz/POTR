@@ -13,7 +13,8 @@ from torch.utils.data import DataLoader, DistributedSampler
 import potr_base.util.misc as utils
 from potr_base.engine import evaluate, train_one_epoch
 from potr_base.models import build_model
-from dataset import HPOESAdvancedDataset
+from dataset import HPOESOberwegerDataset
+from dataset import augmentation
 
 
 def get_args_parser():
@@ -128,9 +129,13 @@ def main(args):
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
     # Load HPOES data from the same source
-    dataset_train = HPOESAdvancedDataset(args.train_data_path)
+    # dataset_train = HPOESAdvancedDataset(args.train_data_path)
+    # if args.eval:
+    #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
+
+    dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=0.5))
     if args.eval:
-        dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
+        dataset_eval = HPOESOberwegerDataset(args.eval_data_path)
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)

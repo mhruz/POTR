@@ -1,13 +1,32 @@
-
 import math
 import torch
 import logging
 import random
+import io
 
 import numpy as np
 import torch.utils.data as torch_data
 
-from dataset.dataset_processing import load_hpoes_data
+from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data
+
+import cv2
+import matplotlib.pyplot as plt
+
+
+def vis_keypoints(image_orig, keypoints, diameter=2):
+    image = image_orig.copy()
+    image += 1
+    image *= 127.5
+    image = image.astype(np.uint8)
+    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+    for (x, y) in keypoints:
+        cv2.circle(image, (int(x), int(y)), diameter, (0, 255, 0), -1)
+
+    plt.figure(figsize=(8, 8))
+    plt.axis('off')
+    plt.imshow(image, cmap="Purples")
+    plt.show()
 
 
 class HPOESDataset:
@@ -125,6 +144,83 @@ class HPOESAdvancedDataset(torch_data.Dataset):
         # Perform any additionally desired transformations
         if self.transform:
             depth_map, label = self.transform(depth_map, label)
+
+        return depth_map, label
+
+    def __len__(self):
+        return len(self.labels)
+
+
+class HPOESOberwegerDataset(torch_data.Dataset):
+    """Object representation of the HPOES dataset for loading hand joints landmarks utilizing the Torch's
+    built-in Dataset properties. The data are in format defined by Oberweger: 224x224 depth images (-1, 1)
+    with labels -1.0 to +1.0 from cube = (250, 250, 250)"""
+
+    data: [np.ndarray]
+    labels: [np.ndarray]
+
+    def __init__(self, dataset_filename: str, encoded=True, transform=None):
+        """
+        Initiates the HPOESDataset with the pre-loaded data from the h5 file.
+
+        :param dataset_filename: Path to the h5 file
+        :param transform: Any data transformation to be applied (default: None)
+        :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
+        """
+        self.encoded = encoded
+
+        if not encoded:
+            loaded_data = load_hpoes_data(dataset_filename)
+        else:
+            loaded_data = load_encoded_hpoes_data(dataset_filename)
+
+        data, labels = loaded_data["data"], loaded_data["labels"]
+
+        # Prevent from initiating with invalid data
+        if len(data) != len(labels):
+            logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
+
+        self.data = data
+        self.labels = labels
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        """
+        Allocates, potentially transforms and returns the item at the desired index.
+
+        :param idx: Index of the item
+        :return: Tuple containing both the depth map and the label
+        """
+
+        if self.encoded:
+            _file = io.BytesIO(self.data[idx])
+            depth_map = np.load(_file)["arr_0"]
+
+        else:
+            depth_map = torch.from_numpy(self.data[idx])
+
+        label = self.labels[idx]
+
+        # Perform any additionally desired transformations
+        if self.transform:
+            # transform the labels into image coordinate
+            label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
+            keypoints = label[:, :2].tolist()
+
+            transformed = self.transform(image=depth_map, keypoints=keypoints)
+            depth_map = transformed["image"]
+            keypoints = transformed["keypoints"]
+
+            keypoints = np.asarray(keypoints)
+            # vis_keypoints(depth_map, keypoints[:, :2])
+
+            label[:, 0] = keypoints[:, 0]
+            label[:, 1] = keypoints[:, 1]
+
+            label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
+
+        depth_map = torch.from_numpy(depth_map)
+        label = torch.from_numpy(np.asarray(label))
 
         return depth_map, label
 

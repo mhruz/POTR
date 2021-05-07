@@ -1,10 +1,11 @@
-
 import h5py
 import io
 import matplotlib
 
 import numpy as np
 import matplotlib.pyplot as plt
+import albumentations as A
+import cv2
 
 
 def visualize_hpoes_data(filename: str):
@@ -53,6 +54,58 @@ def load_hpoes_data(filename: str):
     return {"data": output_depth_maps, "labels": output_labels}
 
 
+def load_encoded_hpoes_data(filename: str):
+    """
+    Reads the encoded hand pose data to memory. The decoding needs to be performed outside of this function. This is
+    suitable, when the decoded data do not fit into memory.
+
+    :param filename: Path to the h5 file
+    :return: Dictionary with the following items:
+        - data: List of bytes with the encoded depth maps (224x224)
+        - labels: List of numpy.ndarrays with the 3D coordinates of the individual hand joints (in millimeters, relative
+        to the center of the image) (21x3)
+    """
+
+    data_file = h5py.File(filename)
+
+    output_depth_maps = []
+    output_labels = []
+
+    # for record_index in range(len(data_file["images"])):
+    for record_index in range(10):
+        pdata = data_file["images"][str(record_index)][:].tostring()
+        labels = data_file["labels"][record_index]
+
+        output_depth_maps.append(pdata)
+        output_labels.append(labels)
+
+    return {"data": output_depth_maps, "labels": output_labels}
+
+
+def aug_dilate(image, **kwargs):
+    dilate_size = np.random.randint(3, 5)
+
+    image = image.copy()
+    image = -image
+    image = cv2.dilate(image, np.ones((dilate_size, dilate_size)))
+    image = -image
+
+    return image
+
+
+def aug_keypoints(keypoints, **kwargs):
+    return keypoints
+
+
+def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_scale=(-0.2, 0.2)):
+    transform = A.Compose([
+        A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=p_apply),
+        A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
+                           value=-1.0)
+    ], keypoint_params=A.KeypointParams("xy", remove_invisible=False))
+
+    return transform
+
+
 if __name__ == "__main__":
     pass
-
