@@ -197,7 +197,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             depth_map = np.load(_file)["arr_0"]
 
         else:
-            depth_map = torch.from_numpy(self.data[idx])
+            depth_map = self.data[idx]
 
         label = self.labels[idx]
 
