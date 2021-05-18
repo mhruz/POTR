@@ -23,7 +23,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module, data_loa
         samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
-        # TEMPORARY: Generate random set of "images"
         outputs = model(samples)
 
         loss_dict = criterion(outputs, targets)

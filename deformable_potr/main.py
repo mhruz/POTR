@@ -22,7 +22,8 @@ import deformable_potr.util.misc as utils
 import deformable_potr.datasets.samplers as samplers
 from deformable_potr.engine import evaluate, train_one_epoch
 from deformable_potr.models import build_model
-from dataset import HPOESAdvancedDataset
+from dataset import HPOESAdvancedDataset, HPOESOberwegerDataset
+from dataset import augmentation
 
 
 def get_args_parser():
@@ -144,9 +145,15 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Number of parameters:", n_parameters)
 
-    dataset_train = HPOESAdvancedDataset(args.train_data_path)
+    # Load HPOES data from the same source
+    # dataset_train = HPOESAdvancedDataset(args.train_data_path)
+    # if args.eval:
+    #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
+
+    dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+                                          encoded=args.encoded)
     if args.eval:
-        dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
+        dataset_eval = HPOESOberwegerDataset(args.eval_data_path)
 
     if args.distributed:
         if args.cache_mode:
