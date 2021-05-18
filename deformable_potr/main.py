@@ -111,6 +111,9 @@ def get_args_parser():
     parser.add_argument('--eval', action='store_true', help="Determines whether to perform evaluatin on each epoch.")
     parser.add_argument('--num_workers', default=1, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
+    parser.add_argument('--p_augment', default=0.5, type=float, help="Probability of applying augmentation.")
+    parser.add_argument('--encoded', default=0, type=int,
+                        help="Whether to read the encoded data (=1) or the decoded data (=0) into memory.")
 
     return parser
 
