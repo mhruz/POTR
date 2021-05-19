@@ -204,6 +204,9 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         # Perform any additionally desired transformations
         if self.transform:
             # transform the labels into image coordinate
+            # the labels are expected to be in relative coordinates of the volume they stem from
+            # with (-1, -1, -1) in the Top-Left-Front corner of the volume
+            # (0, 0, 0) in the center and (1, 1, 1) in the Bottom-Right-Back corner
             label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
             keypoints = label[:, :2].tolist()
 

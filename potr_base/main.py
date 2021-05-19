@@ -5,6 +5,7 @@ import json
 import random
 import time
 from pathlib import Path
+import os
 
 import numpy as np
 import torch
@@ -25,6 +26,7 @@ def get_args_parser():
     parser.add_argument('--weight_decay', default=1e-4, type=float)
     parser.add_argument('--epochs', default=100, type=int)
     parser.add_argument('--lr_drop', default=200, type=int)
+    parser.add_argument('--save_epoch', default=5, type=int, help='interval of saving the model (in epochs)')
     parser.add_argument('--clip_max_norm', default=0, type=float, help='gradient clipping max norm')
 
     # Model parameters
@@ -84,7 +86,7 @@ def get_args_parser():
                         help="HTTP address or full directory of the model to resume training on (ignored if empty)")
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help="Starting epoch index")
     parser.add_argument('--eval', default=False, action='store_true',
-                        help="Determines whether to apply evaluatin on each epoch.")
+                        help="Determines whether to apply evaluation on each epoch.")
     parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--print_frequency', default=10, type=int,
                         help="Print frequency of the stats during training and evaluation.")
@@ -145,7 +147,7 @@ def main(args):
     dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
                                           encoded=args.encoded)
     if args.eval:
-        dataset_eval = HPOESOberwegerDataset(args.eval_data_path)
+        dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)
@@ -186,6 +188,9 @@ def main(args):
         with (output_dir / "log.txt").open("w") as f:
             f.write("")
 
+    best_train_loss = None
+    best_val_loss = None
+
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
@@ -193,11 +198,22 @@ def main(args):
                                       print_freq=args.print_frequency)
         lr_scheduler.step()
 
+        if args.eval:
+            test_stats = evaluate(model, criterion, data_loader_eval, device, print_freq=args.print_frequency)
+
         if args.output_dir:
-            checkpoint_paths = [output_dir / 'checkpoint.pth']
-            # extra checkpoint before LR drop and every 100 epochs
-            if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % 100 == 0:
-                checkpoint_paths.append(output_dir / f'checkpoint{epoch:04}.pth')
+            checkpoint_paths = [os.path.join(output_dir, 'checkpoint.pth')]
+            # extra checkpoint before LR drop and every N epochs
+            if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % args.save_epoch == 0:
+                checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
+            if best_train_loss is None or train_stats["loss"] < best_train_loss:
+                checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
+                best_train_loss = train_stats["loss"]
+            if args.eval:
+                if best_val_loss is None or test_stats["loss"] < best_val_loss:
+                    checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
+                    best_val_loss = test_stats["loss"]
+
             for checkpoint_path in checkpoint_paths:
                 utils.save_on_master({
                     'model': model_without_ddp.state_dict(),
@@ -206,9 +222,6 @@ def main(args):
                     'epoch': epoch,
                     'args': args,
                 }, checkpoint_path)
-
-        if args.eval:
-            test_stats = evaluate(model, criterion, data_loader_eval, device, print_freq=args.print_frequency)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch,
