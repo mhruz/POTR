@@ -68,9 +68,8 @@ print("Constructed model successfully.")
 for i, depth_map in enumerate(depth_maps):
     dm_tensor = torch.from_numpy(depth_map)
     dm_unsqueezed = dm_tensor.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32)
-    dm_unsqueezed = dm_unsqueezed / 224.0 - 0.5
 
-    results = model([dm_unsqueezed]).detach().cpu().numpy() * 150.0
+    results = model([dm_unsqueezed]).detach().cpu().numpy()
     output_list.append(results)
 
 print("Predictions were made.")
