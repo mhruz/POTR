@@ -82,12 +82,54 @@ def load_encoded_hpoes_data(filename: str):
 
 
 def aug_dilate(image, **kwargs):
-    dilate_size = np.random.randint(3, 5)
+    dilate_size = np.random.randint(3, 7)
 
     image = image.copy()
     image = -image
     image = cv2.dilate(image, np.ones((dilate_size, dilate_size)))
     image = -image
+
+    return image
+
+
+def aug_erode(image, **kwargs):
+    erode_size = np.random.randint(3, 5)
+
+    image = image.copy()
+    image = -image
+    image = cv2.erode(image, np.ones((erode_size, erode_size)))
+    image = -image
+
+    return image
+
+
+def aug_erode_or_dilate(image, **kwargs):
+    dilate_size = np.random.randint(3, 5)
+    erode_size = np.random.randint(3, 5)
+    choice = np.random.randint(2)
+
+    image = image.copy()
+    image = -image
+    if choice == 0:
+        image = cv2.dilate(image, np.ones((dilate_size, dilate_size)))
+    else:
+        image = cv2.erode(image, np.ones((erode_size, erode_size)))
+
+    image = -image
+
+    return image
+
+
+def aug_morph_close(image, **kwargs):
+    dilate_size = 5
+
+    image = image.copy()
+    image = -image
+    image = cv2.dilate(image, np.ones((dilate_size, dilate_size)))
+    image = cv2.erode(image, np.ones((dilate_size, dilate_size)))
+    image = -image
+
+    dilate = kwargs["dilate"]
 
     return image
 
@@ -98,7 +140,10 @@ def aug_keypoints(keypoints, **kwargs):
 
 def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_scale=(-0.2, 0.2)):
     transform = A.Compose([
-        A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=p_apply),
+        A.Lambda(image=aug_morph_close, keypoint=aug_keypoints, p=1.0),
+        #A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=1.0),
+        #A.Lambda(image=aug_erode, keypoint=aug_keypoints, p=1.0),
+        A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
         A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
                            value=-1.0)
     ], keypoint_params=A.KeypointParams("xy", remove_invisible=False))

@@ -13,7 +13,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 
-def vis_keypoints(image_orig, keypoints, diameter=2):
+def vis_keypoints(image_orig, keypoints, diameter=2, show=True):
     image = image_orig.copy()
     image += 1
     image *= 127.5
@@ -26,7 +26,8 @@ def vis_keypoints(image_orig, keypoints, diameter=2):
     plt.figure(figsize=(8, 8))
     plt.axis('off')
     plt.imshow(image, cmap="Purples")
-    plt.show()
+    if show:
+        plt.show()
 
 
 class HPOESDataset:
@@ -209,6 +210,9 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             # (0, 0, 0) in the center and (1, 1, 1) in the Bottom-Right-Back corner
             label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
             keypoints = label[:, :2].tolist()
+
+            # keypoints2 = np.asarray(keypoints)
+            # vis_keypoints(depth_map, keypoints2[:, :2], show=False)
 
             transformed = self.transform(image=depth_map, keypoints=keypoints)
             depth_map = transformed["image"]
