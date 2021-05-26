@@ -129,8 +129,6 @@ def aug_morph_close(image, **kwargs):
     image = cv2.erode(image, np.ones((dilate_size, dilate_size)))
     image = -image
 
-    dilate = kwargs["dilate"]
-
     return image
 
 

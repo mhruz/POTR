@@ -30,6 +30,8 @@ args = parser.parse_args()
 
 device = torch.device(args.device)
 
+# TODO: nacitavanie data ala dataset, pouzit augmentacie
+
 # Load the input data and checkpoint
 print("Loading the input data and checkpoints.")
 input_datafile = h5py.File(args.input_file, "r")
