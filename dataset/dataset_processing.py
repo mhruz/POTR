@@ -104,7 +104,7 @@ def aug_erode(image, **kwargs):
 
 
 def aug_erode_or_dilate(image, **kwargs):
-    dilate_size = np.random.randint(3, 5)
+    dilate_size = np.random.randint(3, 7)
     erode_size = np.random.randint(3, 5)
     choice = np.random.randint(2)
 
@@ -132,6 +132,22 @@ def aug_morph_close(image, **kwargs):
     return image
 
 
+def aug_translate_depth(image, keypoints, depth_mean=0.0, depth_std=0.1):
+    random_translation = depth_mean + depth_std * np.random.randn()
+
+    image = image.copy()
+    mask = np.where((-1.0 < image) & (image < 1.0))
+    image[mask] += random_translation
+    image[image < -1.0] = -1.0
+    image[image > 1.0] = 1.0
+
+    keypoints[:, 2] += random_translation
+    keypoints[keypoints[:, 2] < -1.0, 2] = -1.0
+    keypoints[keypoints[:, 2] > 1.0, 2] = 1.0
+
+    return image, keypoints
+
+
 def aug_keypoints(keypoints, **kwargs):
     return keypoints
 
@@ -139,9 +155,12 @@ def aug_keypoints(keypoints, **kwargs):
 def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_scale=(-0.2, 0.2)):
     transform = A.Compose([
         A.Lambda(image=aug_morph_close, keypoint=aug_keypoints, p=1.0),
-        #A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=1.0),
-        #A.Lambda(image=aug_erode, keypoint=aug_keypoints, p=1.0),
-        A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
+        A.OneOf([
+            A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=p_apply),
+            A.Lambda(image=aug_erode, keypoint=aug_keypoints, p=p_apply),
+            A.NoOp(p=p_apply)
+        ]),
+        # A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
         A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
                            value=-1.0)
     ], keypoint_params=A.KeypointParams("xy", remove_invisible=False))

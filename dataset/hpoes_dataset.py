@@ -7,7 +7,7 @@ import io
 import numpy as np
 import torch.utils.data as torch_data
 
-from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data
+from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data, aug_translate_depth
 
 import cv2
 import matplotlib.pyplot as plt
@@ -160,7 +160,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, encoded=True, transform=None):
+    def __init__(self, dataset_filename: str, encoded=True, transform=None, p_augment_3d=0.0):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
 
@@ -169,6 +169,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
         """
         self.encoded = encoded
+        self.p_augment_3d = p_augment_3d
 
         if not encoded:
             loaded_data = load_hpoes_data(dataset_filename)
@@ -225,6 +226,19 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             label[:, 1] = keypoints[:, 1]
 
             label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
+
+            # unfortunately the 3D augmentations have to be done separate,
+            # since albumentations can work only with 2D images
+            if random.random() < self.p_augment_3d:
+                depth_map, label = aug_translate_depth(depth_map, label)
+
+            # label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
+            # keypoints = label[:, :2].tolist()
+            #
+            # keypoints2 = np.asarray(keypoints)
+            # vis_keypoints(depth_map, keypoints2[:, :2], show=True)
+            #
+            # label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
 
         depth_map = torch.from_numpy(depth_map)
         label = torch.from_numpy(np.asarray(label))

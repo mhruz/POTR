@@ -156,7 +156,7 @@ def main(args):
     #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
 
     dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                          encoded=args.encoded)
+                                          encoded=args.encoded, p_augment_3d=args.p_augment)
     if args.eval:
         dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
 
