@@ -71,8 +71,7 @@ def load_encoded_hpoes_data(filename: str):
     output_depth_maps = []
     output_labels = []
 
-    #for record_index in range(len(data_file["images"])):
-    for record_index in range(10):
+    for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
         labels = data_file["labels"][record_index]
 
@@ -157,12 +156,12 @@ def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_sc
     transform = A.Compose([
         A.Lambda(image=aug_morph_close, keypoint=aug_keypoints, p=1.0),
         A.OneOf([
-            A.Lambda(image=aug_dilate, keypoint=aug_keypoints, p=p_apply),
-            A.Lambda(image=aug_erode, keypoint=aug_keypoints, p=p_apply),
-            A.NoOp(p=p_apply)
-        ]),
+            A.Lambda(image=aug_dilate, keypoint=aug_keypoints),
+            A.Lambda(image=aug_erode, keypoint=aug_keypoints),
+            A.NoOp()
+        ], p=p_apply),
         # A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
-        A.Downscale(scale_min=0.5, scale_max=0.9, p=1),
+        A.Downscale(scale_min=0.5, scale_max=0.9, p=p_apply, interpolation=cv2.INTER_NEAREST_EXACT),
         A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
                            value=-1.0)
     ], keypoint_params=A.KeypointParams("xy", remove_invisible=False))
