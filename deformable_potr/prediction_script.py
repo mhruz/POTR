@@ -18,6 +18,8 @@ from deformable_potr.models.deformable_potr import DeformablePOTR
 from deformable_potr.models.backbone import build_backbone
 from deformable_potr.models.deformable_transformer import build_deformable_transformer
 
+from dataset.dataset_processing import aug_morph_close
+
 # Arguments
 parser = argparse.ArgumentParser("DETR HPOES Standalone Annotations Script", add_help=False)
 parser.add_argument("--weights_file", type=str, default="out/checkpoint.pth",
@@ -26,11 +28,10 @@ parser.add_argument("--input_file", type=str, default="in.h5",
                     help="Path to the .h5 file with input data (depth maps)")
 parser.add_argument("--output_file", type=str, default="out.h5", help="Path to the .h5 file to write into")
 parser.add_argument("--device", default="cpu", help="Device to be used")
+parser.add_argument("--tta", default=1, help="Whether to use Test Time Augmentation")
 args = parser.parse_args()
 
 device = torch.device(args.device)
-
-# TODO: nacitavanie data ala dataset, pouzit augmentacie
 
 # Load the input data and checkpoint
 print("Loading the input data and checkpoints.")
@@ -68,6 +69,10 @@ print("Constructed model successfully.")
 
 # Iterate over the depth maps and structure the predictions
 for i, depth_map in enumerate(depth_maps):
+    # test time augmentation - morphological close
+    if args.tta == 1:
+        depth_map = aug_morph_close(depth_map)
+
     dm_tensor = torch.from_numpy(depth_map)
     dm_unsqueezed = dm_tensor.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32)
 
