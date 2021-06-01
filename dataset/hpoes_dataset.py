@@ -212,8 +212,8 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
             keypoints = label[:, :2].tolist()
 
-            # keypoints2 = np.asarray(keypoints)
-            # vis_keypoints(depth_map, keypoints2[:, :2], show=False)
+            keypoints2 = np.asarray(keypoints)
+            vis_keypoints(depth_map, keypoints2[:, :2], show=False)
 
             transformed = self.transform(image=depth_map, keypoints=keypoints)
             depth_map = transformed["image"]
@@ -232,13 +232,13 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             if random.random() < self.p_augment_3d:
                 depth_map, label = aug_translate_depth(depth_map, label)
 
-            # label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
-            # keypoints = label[:, :2].tolist()
-            #
-            # keypoints2 = np.asarray(keypoints)
-            # vis_keypoints(depth_map, keypoints2[:, :2], show=True)
-            #
-            # label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
+            label = depth_map.shape[0] // 2 * label + depth_map.shape[0] // 2
+            keypoints = label[:, :2].tolist()
+
+            keypoints2 = np.asarray(keypoints)
+            vis_keypoints(depth_map, keypoints2[:, :2], show=True)
+
+            label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
 
         depth_map = torch.from_numpy(depth_map)
         label = torch.from_numpy(np.asarray(label))
