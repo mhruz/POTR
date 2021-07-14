@@ -249,5 +249,86 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         return len(self.labels)
 
 
+class HPOESSequentialDataset(torch_data.Dataset):
+    """Object representation of the HPOES dataset for loading hand joints landmarks utilizing the Torch's
+    built-in Dataset properties. The data are in format defined by Oberweger: 224x224 depth images (-1, 1)
+    with labels -1.0 to +1.0 from cube = (250, 250, 250)"""
+
+    data: [np.ndarray]
+    labels: [np.ndarray]
+
+    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True):
+        """
+        Initiates the HPOESDataset with the pre-loaded data from the h5 file.
+
+        :param dataset_filename: Path to the h5 file
+        :param sequence_length: Length of video sequence
+        :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
+        """
+        self.encoded = encoded
+
+        if not encoded:
+            loaded_data = load_hpoes_data(dataset_filename)
+        else:
+            loaded_data = load_encoded_hpoes_data(dataset_filename)
+
+        data, labels = loaded_data["data"], loaded_data["labels"]
+
+        # Prevent from initiating with invalid data
+        if len(data) != len(labels):
+            logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
+
+        if (sequence_length % 2) == 0:
+            logging.info("Sequence length has to be odd. We will replace it for you.")
+            sequence_length = 3
+
+        self.sequence_length = sequence_length
+        self.data = data
+        self.labels = labels
+        # self.p_augment_3d = p_augment_3d
+        # self.transform = transform
+
+    def get_indexes(self, idx):
+        indexes = np.arange(self.sequence_length) + idx - ((self.sequence_length - 1) / 2)
+        indexes[indexes < 0] = 0
+        indexes[indexes > len(self.labels)] = len(self.labels) - 1
+        return indexes.astype(int)
+
+    def __getitem__(self, idx):
+        """
+        Allocates, potentially transforms and returns the item at the desired index.
+
+        :param idx: Index of the item
+        :return: Tuple containing both the depth map and the label
+        """
+        indexes = self.get_indexes(idx)
+
+        if self.encoded:
+            _file = io.BytesIO(self.data[indexes[0]])
+            depth_map = np.load(_file)["arr_0"]
+        else:
+            depth_map = self.data[indexes[0]]
+        depth_map = np.expand_dims(depth_map, axis=0)
+
+        for index in indexes[1:]:
+            if self.encoded:
+                _file = io.BytesIO(self.data[index])
+                next_frame = np.load(_file)["arr_0"]
+                next_frame = np.expand_dims(next_frame, axis=0)
+                depth_map = np.vstack((depth_map, next_frame))
+
+            else:
+                next_frame = self.data[index]
+                next_frame = np.expand_dims(next_frame, axis=0)
+                depth_map = np.vstack((depth_map, next_frame))
+
+        label = self.labels[idx]
+
+        depth_map = torch.from_numpy(depth_map)
+        label = torch.from_numpy(np.asarray(label))
+
+        return depth_map, label
+
+
 if __name__ == "__main__":
     pass
