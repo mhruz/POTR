@@ -331,6 +331,9 @@ class HPOESSequentialDataset(torch_data.Dataset):
 
         return depth_map, label
 
+    def __len__(self):
+        return len(self.labels)
+
 
 if __name__ == "__main__":
     pass

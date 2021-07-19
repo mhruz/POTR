@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 import potr_base.util.misc as utils
 from potr_base.engine import evaluate, train_one_epoch
 from potr_base.models import build_model
-from dataset import HPOESOberwegerDataset
+from dataset import HPOESOberwegerDataset, HPOESSequentialDataset
 from dataset import augmentation
 
 
@@ -97,6 +97,8 @@ def get_args_parser():
     # Parameters: Distributed training
     parser.add_argument('--world_size', default=1, type=int, help='Number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='URL to be used for setup of distributed training')
+
+    parser.add_argument('--sequence_length', default=0, type=int, help='Number of video frames to process (0 or 3)')
     return parser
 
 
@@ -144,10 +146,20 @@ def main(args):
     # if args.eval:
     #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
 
-    dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                          encoded=args.encoded)
+    # dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+    #                                       encoded=args.encoded)
+
+    if args.sequence_length == 0:
+        dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+                                                                                    encoded=args.encoded)
+    else:
+        dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
+                                               encoded=args.encoded)
     if args.eval:
-        dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+        if args.sequence_length == 0:
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+        else:
+            dataset_eval = HPOESSequentialDataset(args.eval_data_path, encoded=args.encoded)
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)
