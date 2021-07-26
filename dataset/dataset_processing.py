@@ -169,5 +169,23 @@ def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_sc
     return transform
 
 
+def sequence_augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_scale=(-0.2, 0.2)):
+    transform = A.Compose([
+        A.Lambda(image=aug_morph_close, keypoint=aug_keypoints, p=1.0),
+        A.OneOf([
+            A.Lambda(image=aug_dilate, keypoint=aug_keypoints),
+            A.Lambda(image=aug_erode, keypoint=aug_keypoints),
+            A.NoOp()
+        ], p=p_apply),
+        # A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
+        A.Downscale(scale_min=0.5, scale_max=0.9, p=p_apply, interpolation=cv2.INTER_NEAREST_EXACT),
+        A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
+                           value=-1.0)
+    ], additional_targets={'image1' : 'image', 'image2' : 'image'},
+        keypoint_params=A.KeypointParams("xy", remove_invisible=False))
+
+    return transform
+
+
 if __name__ == "__main__":
     pass

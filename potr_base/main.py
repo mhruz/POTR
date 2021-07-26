@@ -159,7 +159,8 @@ def main(args):
         if args.sequence_length == 0:
             dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
         else:
-            dataset_eval = HPOESSequentialDataset(args.eval_data_path, encoded=args.encoded)
+            dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
+                                                  encoded=args.encoded)
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)

@@ -259,13 +259,14 @@ class HPOESSequentialDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True):
+    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=None):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
 
         :param dataset_filename: Path to the h5 file
         :param sequence_length: Length of video sequence
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
+        :param transform: Any data transformation to be applied (default: None)
         """
         self.encoded = encoded
 
@@ -288,7 +289,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
         self.data = data
         self.labels = labels
         # self.p_augment_3d = p_augment_3d
-        # self.transform = transform
+        self.transform = transform
 
     def get_indexes(self, idx):
         indexes = np.arange(self.sequence_length) + idx - ((self.sequence_length - 1) / 2)
@@ -325,6 +326,9 @@ class HPOESSequentialDataset(torch_data.Dataset):
                 depth_map = np.vstack((depth_map, next_frame))
 
         label = self.labels[idx]
+
+        # Perform any additionally desired transformations
+
 
         depth_map = torch.from_numpy(depth_map)
         label = torch.from_numpy(np.asarray(label))
