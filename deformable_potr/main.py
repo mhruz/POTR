@@ -24,7 +24,7 @@ import deformable_potr.datasets.samplers as samplers
 from deformable_potr.engine import evaluate, train_one_epoch
 from deformable_potr.models import build_model
 from dataset import HPOESAdvancedDataset, HPOESOberwegerDataset, HPOESSequentialDataset
-from dataset import augmentation
+from dataset import augmentation, sequence_augmentation
 
 
 def get_args_parser():
@@ -160,12 +160,14 @@ def main(args):
                                               encoded=args.encoded, p_augment_3d=args.p_augment)
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
+                                               transform=sequence_augmentation(p_apply=args.p_augment),
                                                encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
             dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
+                                                  transform=sequence_augmentation(p_apply=args.p_augment),
                                                   encoded=args.encoded)
 
     if args.distributed:

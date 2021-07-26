@@ -259,7 +259,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=None):
+    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=None, p_augment_3d=0.0):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
 
@@ -288,7 +288,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
         self.sequence_length = sequence_length
         self.data = data
         self.labels = labels
-        # self.p_augment_3d = p_augment_3d
+        self.p_augment_3d = p_augment_3d
         self.transform = transform
 
     def get_indexes(self, idx):
@@ -328,7 +328,36 @@ class HPOESSequentialDataset(torch_data.Dataset):
         label = self.labels[idx]
 
         # Perform any additionally desired transformations
+        if self.transform:
+            # transform the labels into image coordinate
+            # the labels are expected to be in relative coordinates of the volume they stem from
+            # with (-1, -1, -1) in the Top-Left-Front corner of the volume
+            # (0, 0, 0) in the center and (1, 1, 1) in the Bottom-Right-Back corner
+            label = depth_map.shape[1] // 2 * label + depth_map.shape[1] // 2
+            keypoints = label[:, :2].tolist()
 
+            # keypoints2 = np.asarray(keypoints)
+            # vis_keypoints(depth_map, keypoints2[:, :2], show=False)
+
+            transformed = self.transform(image=depth_map[0], image1=depth_map[1], image2=depth_map[2],
+                                         keypoints=keypoints)
+            depth_map[0] = transformed["image"]
+            depth_map[1] = transformed["image1"]
+            depth_map[2] = transformed["image2"]
+            keypoints = transformed["keypoints"]
+
+            keypoints = np.asarray(keypoints)
+            # vis_keypoints(depth_map, keypoints[:, :2])
+
+            label[:, 0] = keypoints[:, 0]
+            label[:, 1] = keypoints[:, 1]
+
+            label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
+
+            # the 3D augmentations have to be done separately,
+            # since albumentations can work only with 2D images
+            if random.random() < self.p_augment_3d:
+                depth_map, label = aug_translate_depth(depth_map, label)
 
         depth_map = torch.from_numpy(depth_map)
         label = torch.from_numpy(np.asarray(label))
