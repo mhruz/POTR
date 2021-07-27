@@ -352,7 +352,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
             label[:, 0] = keypoints[:, 0]
             label[:, 1] = keypoints[:, 1]
 
-            label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
+            label = (label - depth_map.shape[1] // 2) / (depth_map.shape[1] // 2)
 
             # the 3D augmentations have to be done separately,
             # since albumentations can work only with 2D images
