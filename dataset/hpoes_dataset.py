@@ -292,9 +292,10 @@ class HPOESSequentialDataset(torch_data.Dataset):
         self.transform = transform
 
     def get_indexes(self, idx):
-        indexes = np.arange(self.sequence_length) + idx - ((self.sequence_length - 1) / 2)
-        indexes[indexes < 0] = 0
-        indexes[indexes >= len(self.labels)] = len(self.labels) - 1
+        # indexes = np.arange(self.sequence_length) + idx - ((self.sequence_length - 1) / 2)
+        # indexes[indexes < 0] = 0
+        # indexes[indexes >= len(self.labels)] = len(self.labels) - 1
+        indexes = np.zeros(self.sequence_length) + idx
         return indexes.astype(int)
 
     def __getitem__(self, idx):
