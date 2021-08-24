@@ -15,7 +15,7 @@ import potr_base.util.misc as utils
 from potr_base.engine import evaluate, train_one_epoch
 from potr_base.models import build_model
 from dataset import HPOESOberwegerDataset, HPOESSequentialDataset
-from dataset import augmentation, sequence_augmentation
+from dataset import augmentation
 
 
 def get_args_parser():
@@ -154,14 +154,12 @@ def main(args):
                                                                                     encoded=args.encoded)
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
-                                               transform=sequence_augmentation(p_apply=args.p_augment),
-                                               encoded=args.encoded)
+                                               transform=args.p_augment, encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
             dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
-                                                  transform=sequence_augmentation(p_apply=args.p_augment),
                                                   encoded=args.encoded)
 
     if args.distributed:

@@ -12,6 +12,8 @@ from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data,
 import cv2
 import matplotlib.pyplot as plt
 
+import albumentations as A
+
 
 def vis_keypoints(image_orig, keypoints, diameter=2, show=True):
     image = image_orig.copy()
@@ -259,14 +261,16 @@ class HPOESSequentialDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=None, p_augment_3d=0.0):
+    def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=0.0,
+                 p_augment_3d=0.0):
         """
-        Initiates the HPOESDataset with the pre-loaded data from the h5 file.
+        Initiates the HPOESSequentialDataset with the pre-loaded data from the h5 file.
 
         :param dataset_filename: Path to the h5 file
         :param sequence_length: Length of video sequence
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
-        :param transform: Any data transformation to be applied (default: None)
+        :param transform: Probability of 2D augmentations (default: 0.0)
+        :param p_augment_3d: Probability of 3D augmentations (default: 0.0)
         """
         self.encoded = encoded
 
@@ -290,12 +294,80 @@ class HPOESSequentialDataset(torch_data.Dataset):
         self.labels = labels
         self.p_augment_3d = p_augment_3d
         self.transform = transform
+        self.rand_choice = 0
+        self.dilate_size = 3
+        self.erode_size = 3
 
     def get_indexes(self, idx):
         indexes = np.arange(self.sequence_length) + idx - ((self.sequence_length - 1) / 2)
         indexes[indexes < 0] = 0
         indexes[indexes >= len(self.labels)] = len(self.labels) - 1
+        # indexes = np.zeros(self.sequence_length) + idx
         return indexes.astype(int)
+
+    def aug_dilate(self, image, **kwargs):
+        image = image.copy()
+        image = -image
+        image = cv2.dilate(image, np.ones((self.dilate_size, self.dilate_size)))
+        image = -image
+
+        return image
+
+    def aug_erode(self, image, **kwargs):
+        image = image.copy()
+        image = -image
+        image = cv2.erode(image, np.ones((self.erode_size, self.erode_size)))
+        image = -image
+
+        return image
+
+    def deterministic_sequence_augmentation(self):
+        if self.rand_choice == 1:
+            augm = A.Lambda(image=self.aug_dilate, keypoint=self.aug_keypoints)
+        elif self.rand_choice == 2:
+            augm = A.Lambda(image=self.aug_erode, keypoint=self.aug_keypoints)
+        else:
+            augm = A.NoOp()
+        transform = A.Compose([
+            A.Lambda(image=self.aug_morph_close, keypoint=self.aug_keypoints, p=1.0),
+            augm])
+
+        return transform
+
+    @staticmethod
+    def aug_morph_close(image, **kwargs):
+        dilate_size = 5
+
+        image = image.copy()
+        image = -image
+        image = cv2.dilate(image, np.ones((dilate_size, dilate_size)))
+        image = cv2.erode(image, np.ones((dilate_size, dilate_size)))
+        image = -image
+
+        return image
+
+    @staticmethod
+    def aug_keypoints(keypoints, **kwargs):
+        return keypoints
+
+    def sequence_augmentation(self, p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_scale=(-0.2, 0.2)):
+        if self.rand_choice == 1:
+            augm = A.Lambda(image=self.aug_dilate, keypoint=self.aug_keypoints)
+        elif self.rand_choice == 2:
+            augm = A.Lambda(image=self.aug_erode, keypoint=self.aug_keypoints)
+        else:
+            augm = A.NoOp()
+        transform = A.Compose([
+            A.Lambda(image=self.aug_morph_close, keypoint=self.aug_keypoints, p=1.0),
+            augm,
+            A.Downscale(scale_min=0.5, scale_max=0.9, p=p_apply, interpolation=cv2.INTER_NEAREST_EXACT),
+            A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply,
+                               border_mode=cv2.BORDER_REFLECT101,
+                               value=-1.0)
+        ], additional_targets={'image1': 'image', 'image2': 'image'},
+            keypoint_params=A.KeypointParams("xy", remove_invisible=False))
+
+        return transform
 
     def __getitem__(self, idx):
         """
@@ -328,7 +400,11 @@ class HPOESSequentialDataset(torch_data.Dataset):
         label = self.labels[idx]
 
         # Perform any additionally desired transformations
-        if self.transform:
+        if self.transform > 0:
+            self.rand_choice = np.random.choice(3, 1)
+            self.dilate_size = np.random.randint(3, 7)
+            self.erode_size = np.random.randint(3, 5)
+            det_transform = self.sequence_augmentation(p_apply=self.transform)
             # transform the labels into image coordinate
             # the labels are expected to be in relative coordinates of the volume they stem from
             # with (-1, -1, -1) in the Top-Left-Front corner of the volume
@@ -336,10 +412,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
             label = depth_map.shape[1] // 2 * label + depth_map.shape[1] // 2
             keypoints = label[:, :2].tolist()
 
-            # keypoints2 = np.asarray(keypoints)
-            # vis_keypoints(depth_map, keypoints2[:, :2], show=False)
-
-            transformed = self.transform(image=depth_map[0], image1=depth_map[1], image2=depth_map[2],
+            transformed = det_transform(image=depth_map[0], image1=depth_map[1], image2=depth_map[2],
                                          keypoints=keypoints)
             depth_map[0] = transformed["image"]
             depth_map[1] = transformed["image1"]
@@ -347,7 +420,6 @@ class HPOESSequentialDataset(torch_data.Dataset):
             keypoints = transformed["keypoints"]
 
             keypoints = np.asarray(keypoints)
-            # vis_keypoints(depth_map, keypoints[:, :2])
 
             label[:, 0] = keypoints[:, 0]
             label[:, 1] = keypoints[:, 1]
