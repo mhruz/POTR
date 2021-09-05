@@ -35,14 +35,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     for item_index, (samples, targets) in enumerate(data_loader):
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
-        print("Reached 1")
         outputs = model(samples)
-        print("Reached 2")
         loss_dict = criterion(outputs, targets)
-        losses_all.append(float(loss_dict["loss_coords"].item()))
 
         weight_dict = criterion.weight_dict
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+        losses_all.append(losses)
 
         optimizer.zero_grad()
         losses.backward()
@@ -72,7 +70,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
 
-        metric_logger.update(loss=loss_dict["loss_coords"])
+        metric_logger.update(loss=sum(loss_dict.values()))
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()

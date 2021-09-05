@@ -102,9 +102,9 @@ def get_args_parser():
     parser.add_argument('--focal_alpha', default=0.25, type=float)
 
     # Parameters: Dataset
-    parser.add_argument('--train_data_path', default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5",
+    parser.add_argument('--train_data_path', default="/storage/plzen4-ntis/home/mbohacek/POTR/deformable_detr_plus/train_image.h5",
                         type=str, help="Path to the training dataset H5 file.")
-    parser.add_argument('--eval_data_path', default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5",
+    parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/home/mbohacek/POTR/deformable_detr_plus/train_image.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
 
     parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
@@ -158,14 +158,16 @@ def main(args):
     #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
 
     if args.sequence_length == 0:
-        dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                              encoded=args.encoded, p_augment_3d=args.p_augment)
+        #dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+        #                                      encoded=args.encoded, p_augment_3d=args.p_augment)
+        dataset_train = HPOESAdvancedDataset(args.train_data_path, transform=None)
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
                                                transform=args.p_augment, encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
-            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+            #dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+            dataset_eval = HPOESAdvancedDataset(args.train_data_path, transform=None)
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)

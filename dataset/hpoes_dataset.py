@@ -441,4 +441,5 @@ class HPOESSequentialDataset(torch_data.Dataset):
 
 
 if __name__ == "__main__":
+    ds = HPOESAdvancedDataset("train_image.h5")
     pass

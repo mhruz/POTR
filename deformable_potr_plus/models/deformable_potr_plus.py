@@ -192,7 +192,7 @@ class DeformablePOTR(nn.Module):
         outputs_class = torch.stack(outputs_classes)
         outputs_coord = torch.stack(outputs_coords)
 
-        return {"pred_logits": outputs_class[-1], "pred_boxes": outputs_coord[-1]}
+        return {"pred_logits": outputs_class[-1], "pred_coords": outputs_coord[-1]}
 
 
 class SetCriterion(nn.Module):
@@ -202,7 +202,7 @@ class SetCriterion(nn.Module):
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
 
-    def __init__(self, num_queries, weight_dict, losses):
+    def __init__(self, num_classes, matcher, weight_dict, losses):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -213,28 +213,64 @@ class SetCriterion(nn.Module):
         """
 
         super().__init__()
-        self.num_queries = num_queries
+
+        self.num_classes = num_classes
+        self.matcher = matcher
         self.weight_dict = weight_dict
         self.losses = losses
 
-    def loss_coords(self, outputs, targets):
+    def loss_labels(self, outputs, targets, indices):
+
+        src_logits = outputs['pred_logits']
+
+        idx = self._get_src_permutation_idx(indices)
+        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+        target_classes = torch.full(src_logits.shape[:2], self.num_classes, dtype=torch.int64, device=src_logits.device)
+        target_classes[idx] = target_classes_o
+
+        target_classes_onehot = torch.zeros([src_logits.shape[0], src_logits.shape[1], src_logits.shape[2] + 1],
+                                            dtype=src_logits.dtype, layout=src_logits.layout, device=src_logits.device)
+        target_classes_onehot.scatter_(2, target_classes.unsqueeze(-1), 1)
+
+        target_classes_onehot = target_classes_onehot[:, :, :-1]
+        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, self.num_classes, alpha=self.focal_alpha, gamma=2) * \
+                  src_logits.shape[1]
+        losses = {'loss_ce': loss_ce}
+
+        return losses
+
+    def loss_coords(self, outputs, targets, indices):
         """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
            targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
         """
 
-        loss_coords = F.smooth_l1_loss(outputs, torch.stack(targets), reduction="none")
+        idx = self._get_src_permutation_idx(indices)
+        src_coords = outputs["pred_coords"][idx]
+        target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
+        loss_coords = F.smooth_l1_loss(src_coords, target_coords, reduction="none")
         losses = {}
-        losses['loss_coords'] = loss_coords.sum() / self.num_queries
+        losses['loss_coords'] = loss_coords.sum() / self.num_classes
 
         return losses
 
     def get_loss(self, loss, outputs, targets, **kwargs):
         loss_map = {
-            'coords': self.loss_coords
+            "labels": self.loss_labels,
+            "coords": self.loss_coords
         }
         return loss_map[loss](outputs, targets, **kwargs)
+
+    def _get_src_permutation_idx(self, indices):
+        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
+        src_idx = torch.cat([src for (src, _) in indices])
+        return batch_idx, src_idx
+
+    def _get_tgt_permutation_idx(self, indices):
+        batch_idx = torch.cat([torch.full_like(tgt, i) for i, (_, tgt) in enumerate(indices)])
+        tgt_idx = torch.cat([tgt for (_, tgt) in indices])
+        return batch_idx, tgt_idx
 
     def forward(self, outputs, targets):
         """ This performs the loss computation.
@@ -244,9 +280,16 @@ class SetCriterion(nn.Module):
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
 
+        targets = [{
+            "coords": target,
+            "labels": range(21)
+        } for target in targets]
+
+        indices = self.matcher(outputs, targets)
+
         losses = {}
         for loss in self.losses:
-            losses.update(self.get_loss(loss, outputs, targets))
+            losses.update(self.get_loss(loss, outputs, targets, indices))
 
         return losses
 
@@ -305,6 +348,7 @@ def build(args):
 
     device = torch.device(args.device)
     backbone = build_backbone(args)
+    matcher = build_matcher(args)
     transformer = build_deformable_transformer(args)
 
     model = DeformablePOTR(
@@ -318,10 +362,10 @@ def build(args):
         two_stage=args.two_stage,
     )
 
-    weight_dict = {"loss_coords": 1}
-    losses = ['coords']
+    weight_dict = {"loss_coords": 1, "labels": 1}
+    losses = ['coords', "labels"]
 
-    criterion = SetCriterion(args.num_queries, weight_dict=weight_dict, losses=losses)
+    criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses)
     criterion.to(device)
 
     return model, criterion
