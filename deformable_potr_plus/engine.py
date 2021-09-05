@@ -35,8 +35,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     for item_index, (samples, targets) in enumerate(data_loader):
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
-
+        print("Reached 1")
         outputs = model(samples)
+        print("Reached 2")
         loss_dict = criterion(outputs, targets)
         losses_all.append(float(loss_dict["loss_coords"].item()))
 
