@@ -14,7 +14,7 @@ import h5py
 
 import numpy as np
 
-from deformable_potr_plus.models.deformable_potr import DeformablePOTR
+from deformable_potr_plus.models.deformable_potr_plus import DeformablePOTR
 from deformable_potr_plus.models.backbone import build_backbone
 from deformable_potr_plus.models.deformable_transformer import build_deformable_transformer
 
