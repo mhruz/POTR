@@ -24,7 +24,7 @@ from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_util
 
-from deformable_potr.util.misc import all_gather
+from deformable_potr_plus.util.misc import all_gather
 
 
 class CocoEvaluator(object):

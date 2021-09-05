@@ -17,8 +17,8 @@ import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
-from deformable_potr.util.box_ops import box_xyxy_to_cxcywh
-from deformable_potr.util.misc import interpolate
+from deformable_potr_plus.util.box_ops import box_xyxy_to_cxcywh
+from deformable_potr_plus.util.misc import interpolate
 
 
 def crop(image, target, region):

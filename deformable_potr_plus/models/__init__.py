@@ -7,7 +7,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # ------------------------------------------------------------------------
 
-from deformable_potr.models.deformable_potr import build
+from deformable_potr_plus.models.deformable_potr import build
 
 
 def build_model(args):

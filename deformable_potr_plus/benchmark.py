@@ -13,10 +13,10 @@ import argparse
 
 import torch
 
-from deformable_potr.main import get_args_parser as get_main_args_parser
-from deformable_potr.models import build_model
-from deformable_potr.datasets import build_dataset
-from deformable_potr.util.misc import nested_tensor_from_tensor_list
+from deformable_potr_plus.main import get_args_parser as get_main_args_parser
+from deformable_potr_plus.models import build_model
+from deformable_potr_plus.datasets import build_dataset
+from deformable_potr_plus.util.misc import nested_tensor_from_tensor_list
 
 
 def get_benckmark_arg_parser():

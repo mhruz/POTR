@@ -16,8 +16,8 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
 
-from deformable_potr.util.misc import inverse_sigmoid
-from deformable_potr.models.ops.modules import MSDeformAttn
+from deformable_potr_plus.util.misc import inverse_sigmoid
+from deformable_potr_plus.models.ops.modules import MSDeformAttn
 
 
 class DeformableTransformer(nn.Module):

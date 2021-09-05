@@ -6,4 +6,4 @@
 # Modified from https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0
 # ------------------------------------------------------------------------------------------------
 
-from deformable_potr.models.ops.functions.ms_deform_attn_func import MSDeformAttnFunction
+from deformable_potr_plus.models.ops.functions.ms_deform_attn_func import MSDeformAttnFunction

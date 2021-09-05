@@ -16,8 +16,8 @@ from PIL import Image
 
 from panopticapi.utils import rgb2id
 
-from deformable_potr.util.box_ops import masks_to_boxes
-from deformable_potr.datasets.coco import make_coco_transforms
+from deformable_potr_plus.util.box_ops import masks_to_boxes
+from deformable_potr_plus.datasets.coco import make_coco_transforms
 
 
 class CocoPanoptic:

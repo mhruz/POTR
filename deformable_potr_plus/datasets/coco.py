@@ -18,9 +18,9 @@ import torch
 import torch.utils.data
 from pycocotools import mask as coco_mask
 
-from deformable_potr.datasets.torchvision_datasets import CocoDetection as TvCocoDetection
-from deformable_potr.util.misc import get_local_rank, get_local_size
-import deformable_potr.datasets.transforms as T
+from deformable_potr_plus.datasets.torchvision_datasets import CocoDetection as TvCocoDetection
+from deformable_potr_plus.util.misc import get_local_rank, get_local_size
+import deformable_potr_plus.datasets.transforms as T
 
 
 class CocoDetection(TvCocoDetection):

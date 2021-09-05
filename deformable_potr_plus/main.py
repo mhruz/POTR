@@ -19,10 +19,10 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-import deformable_potr.util.misc as utils
-import deformable_potr.datasets.samplers as samplers
-from deformable_potr.engine import evaluate, train_one_epoch
-from deformable_potr.models import build_model
+import deformable_potr_plus.util.misc as utils
+import deformable_potr_plus.datasets.samplers as samplers
+from deformable_potr_plus.engine import evaluate, train_one_epoch
+from deformable_potr_plus.models import build_model
 from dataset import HPOESAdvancedDataset, HPOESOberwegerDataset, HPOESSequentialDataset
 from dataset import augmentation
 

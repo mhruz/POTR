@@ -17,8 +17,8 @@ import sys
 from typing import Iterable
 
 import torch
-import deformable_potr.util.misc as utils
-from deformable_potr.datasets.data_prefetcher import data_prefetcher
+import deformable_potr_plus.util.misc as utils
+from deformable_potr_plus.datasets.data_prefetcher import data_prefetcher
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,

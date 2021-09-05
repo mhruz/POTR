@@ -15,16 +15,16 @@ import torch.nn.functional as F
 from torch import nn
 import math
 
-from deformable_potr.util import box_ops
-from deformable_potr.util.misc import (NestedTensor, nested_tensor_from_tensor_list,
+from deformable_potr_plus.util import box_ops
+from deformable_potr_plus.util.misc import (NestedTensor, nested_tensor_from_tensor_list,
                        accuracy, get_world_size, interpolate,
                        is_dist_avail_and_initialized, inverse_sigmoid)
 
-from deformable_potr.models.backbone import build_backbone
-from deformable_potr.models.matcher import build_matcher
-from deformable_potr.models.segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
+from deformable_potr_plus.models.backbone import build_backbone
+from deformable_potr_plus.models.matcher import build_matcher
+from deformable_potr_plus.models.segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
-from deformable_potr.models.deformable_transformer import build_deformable_transformer
+from deformable_potr_plus.models.deformable_transformer import build_deformable_transformer
 import copy
 
 
