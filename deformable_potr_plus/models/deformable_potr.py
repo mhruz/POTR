@@ -35,7 +35,7 @@ def _get_clones(module, N):
 class DeformablePOTR(nn.Module):
     """ Deformable POTR module for joint coordinates regression """
 
-    def __init__(self, backbone, transformer, num_queries, num_feature_levels, aux_loss=True, with_box_refine=False,
+    def __init__(self, backbone, transformer, num_classes, num_queries, num_feature_levels, aux_loss=True, with_box_refine=False,
                  two_stage=False):
         """ Initializes the model.
         Parameters:
@@ -55,6 +55,7 @@ class DeformablePOTR(nn.Module):
 
         hidden_dim = transformer.d_model
 
+        self.class_embed = nn.Linear(hidden_dim, num_classes)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 3, 1)
         self.num_feature_levels = num_feature_levels
 
@@ -91,6 +92,12 @@ class DeformablePOTR(nn.Module):
         self.with_box_refine = with_box_refine
         self.two_stage = two_stage
 
+        # TODO: Is this necessary?
+        prior_prob = 0.01
+        bias_value = -math.log((1 - prior_prob) / prior_prob)
+        self.class_embed.bias.data = torch.ones(num_classes) * bias_value
+        # END OF TODO
+
         nn.init.constant_(self.bbox_embed.layers[-1].weight.data, 0)
         nn.init.constant_(self.bbox_embed.layers[-1].bias.data, 0)
 
@@ -101,6 +108,7 @@ class DeformablePOTR(nn.Module):
         # if two-stage, the last class_embed and bbox_embed is for region proposal generation
         num_pred = (transformer.decoder.num_layers + 1) if two_stage else transformer.decoder.num_layers
         if with_box_refine:
+            self.class_embed = _get_clones(self.class_embed, num_pred)
             self.bbox_embed = _get_clones(self.bbox_embed, num_pred)
             nn.init.constant_(self.bbox_embed[0].layers[-1].bias.data[2:], -2.0)
             # hack implementation for iterative bounding box refinement
@@ -108,6 +116,7 @@ class DeformablePOTR(nn.Module):
 
         else:
             nn.init.constant_(self.bbox_embed.layers[-1].bias.data[2:], -2.0)
+            self.class_embed = nn.ModuleList([self.class_embed for _ in range(num_pred)])
             self.bbox_embed = nn.ModuleList([self.bbox_embed for _ in range(num_pred)])
             self.transformer.decoder.bbox_embed = None
 
@@ -160,6 +169,7 @@ class DeformablePOTR(nn.Module):
 
         hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks, pos, query_embeds)
 
+        outputs_classes = []
         outputs_coords = []
         for lvl in range(hs.shape[0]):
             if lvl == 0:
@@ -167,6 +177,7 @@ class DeformablePOTR(nn.Module):
             else:
                 reference = inter_references[lvl - 1]
 
+            outputs_class = self.class_embed[lvl](hs[lvl])
             tmp = self.bbox_embed[lvl](hs[lvl])
             if reference.shape[-1] == 4:
                 tmp += reference
@@ -175,11 +186,13 @@ class DeformablePOTR(nn.Module):
                 tmp[..., :2] += reference
 
             outputs_coord = tmp
+            outputs_classes.append(outputs_class)
             outputs_coords.append(outputs_coord)
 
+        outputs_class = torch.stack(outputs_classes)
         outputs_coord = torch.stack(outputs_coords)
 
-        return outputs_coord[-1]
+        return {"pred_logits": outputs_class[-1], "pred_boxes": outputs_coord[-1]}
 
 
 class SetCriterion(nn.Module):
@@ -297,6 +310,7 @@ def build(args):
     model = DeformablePOTR(
         backbone,
         transformer,
+        num_classes=args.num_classes + 1,  # Add one additional class for representation of the background
         num_queries=args.num_queries,
         num_feature_levels=args.num_feature_levels,
         aux_loss=args.aux_loss,
