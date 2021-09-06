@@ -282,7 +282,7 @@ class SetCriterion(nn.Module):
 
         targets = [{
             "coords": target,
-            "labels": range(21)
+            "labels": torch.tensor(list(range(21)))
         } for target in targets]
 
         indices = self.matcher(outputs, targets)
