@@ -95,7 +95,8 @@ class HungarianMatcher(nn.Module):
 
             sizes = [len(v["coords"]) for v in targets]
             indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
-            return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+
+            return [(torch.as_tensor(i, dtype=torch.int64).cuda(), torch.as_tensor(j, dtype=torch.int64).cuda()) for i, j in indices]
 
 
 def build_matcher(args):
