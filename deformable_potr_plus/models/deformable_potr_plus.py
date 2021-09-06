@@ -255,12 +255,12 @@ class SetCriterion(nn.Module):
 
         return losses
 
-    def get_loss(self, loss, outputs, targets, **kwargs):
+    def get_loss(self, loss, outputs, targets, indices, **kwargs):
         loss_map = {
             "labels": self.loss_labels,
             "coords": self.loss_coords
         }
-        return loss_map[loss](outputs, targets, **kwargs)
+        return loss_map[loss](outputs, targets, indices, **kwargs)
 
     def _get_src_permutation_idx(self, indices):
         batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
