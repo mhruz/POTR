@@ -157,16 +157,16 @@ def main(args):
 
     if args.sequence_length == 0:
         dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                              encoded=args.encoded, p_augment_3d=args.p_augment)
+                                              encoded=args.encoded, p_augment_3d=args.p_augment, mode='train')
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
-                                               transform=args.p_augment, encoded=args.encoded)
+                                               transform=args.p_augment, encoded=args.encoded, mode='train')
     if args.eval:
         if args.sequence_length == 0:
-            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded, mode='eval')
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
-                                                  encoded=args.encoded)
+                                                  encoded=args.encoded, mode='eval')
 
     if args.distributed:
         if args.cache_mode:
