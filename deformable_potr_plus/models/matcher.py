@@ -81,7 +81,7 @@ class HungarianMatcher(nn.Module):
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
 
             # Compute the L1 cost between boxes
-            cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)
+            cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=2)
 
             # Compute the giou cost betwen boxes
             # TODO: Replace IOU
