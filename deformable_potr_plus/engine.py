@@ -11,6 +11,7 @@
 Train and eval functions used in main.py
 """
 
+import logging
 import statistics
 import math
 import sys
@@ -48,12 +49,15 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         optimizer.step()
 
         if (item_index + 1) % print_freq == 0:
-            print(header, "[{0}/{1}]".format(item_index + 1, len(data_loader)), "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(losses_all[-1]))
+            print(header, "[{0}/{1}]".format(item_index + 1, len(data_loader)), "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(losses_all[-1].item()))
+            logging.info(header + " [{0}/{1}]".format(item_index + 1, len(data_loader)) + " lr: " + str(optimizer.param_groups[0]["lr"]) + " loss: " + str(losses_all[-1].item()))
 
+    converted_losses = [i.item() for i in losses_all]
     # gather the stats from all processes
-    print(header, "Averaged stats:", "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(statistics.mean(losses_all)))
+    print(header, "Averaged stats:", "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(statistics.mean(converted_losses)))
+    logging.info(header + " Averaged stats:" + " lr: " + str(optimizer.param_groups[0]["lr"]) + " loss: " + str(statistics.mean(converted_losses)))
 
-    return {"lr": optimizer.param_groups[0]["lr"], "loss": statistics.mean(losses_all)}
+    return {"lr": optimizer.param_groups[0]["lr"], "loss": statistics.mean(converted_losses)}
 
 
 @torch.no_grad()

@@ -7,7 +7,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # ------------------------------------------------------------------------
 
-
+import logging
 import argparse
 import datetime
 import json
@@ -132,6 +132,15 @@ def match_name_keywords(n, name_keywords):
 
 
 def main(args):
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler("experiment_name" + ".log")
+        ]
+    )
+
     utils.init_distributed_mode(args)
     print("git:\n  {}\n".format(utils.get_sha()))
 
