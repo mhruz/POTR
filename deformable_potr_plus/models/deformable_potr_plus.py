@@ -10,6 +10,9 @@
 """
 Deformable DETR model and criterion classes.
 """
+
+import random
+import pickle
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -285,6 +288,13 @@ class SetCriterion(nn.Module):
             "coords": target,
             "labels": torch.tensor(list(range(21)))
         } for target in targets]
+
+        # TEMP SAVING FUNCTIONALITY
+        with open("out_pickles/outputs_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
+            pickle.dump(outputs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open("out_pickles/targets_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
+            pickle.dump(targets, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # END TEMP SAVING FUNCTIONALITY
 
         indices = self.matcher(outputs, targets)
 
