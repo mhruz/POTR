@@ -59,7 +59,7 @@ model.to(device)
 print("Constructed model successfully.")
 
 dataset_test = HPOESOberwegerDataset(args.input_file, encoded=True, mode='test')
-data_loader = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=0, shuffle=True)
+data_loader = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=0, shuffle=False)
 
 # Iterate over the depth maps and structure the predictions
 for i, (samples) in enumerate(data_loader):
