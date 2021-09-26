@@ -1,6 +1,6 @@
 
 """
-Standalone annotations script for hand pose estimation using DETR HPOES.
+Standalone annotations script for hand pose estimation using POTR HPOES.
 
 ! Warning !
 The script expects the input data in a .H5 dataset (under "images" key) in a form specified below. For other data
@@ -9,30 +9,27 @@ structures, please implement your own logic. Either way, the `depth_maps` should
 
 import argparse
 import torch
-import io
 import h5py
 
 import numpy as np
 
 from torch.utils.data import DataLoader
 
-from deformable_potr.models.deformable_potr import DeformablePOTR
-from deformable_potr.models.backbone import build_backbone
-from deformable_potr.models.deformable_transformer import build_deformable_transformer
+from potr_base.models.potr import POTR
+from potr_base.models.backbone import build_backbone
+from potr_base.models.transformer import build_transformer
 
-from dataset.dataset_processing import aug_morph_close
 from dataset.hpoes_dataset import HPOESOberwegerDataset
 
 
 # Arguments
-parser = argparse.ArgumentParser("DETR HPOES Standalone Annotations Script", add_help=False)
+parser = argparse.ArgumentParser("POTR HPOES Standalone Annotations Script", add_help=False)
 parser.add_argument("--weights_file", type=str, default="out/checkpoint.pth",
                     help="Path to the pretrained model's chekpoint (.pth)")
 parser.add_argument("--input_file", type=str, default="in.h5",
                     help="Path to the .h5 file with input data (depth maps)")
 parser.add_argument("--output_file", type=str, default="out.h5", help="Path to the .h5 file to write into")
 parser.add_argument("--device", default="cpu", help="Device to be used")
-parser.add_argument("--tta", default=1, help="Whether to use Test Time Augmentation")
 parser.add_argument("--batch_size", default=1, type=int, help="Batch size")
 args = parser.parse_args()
 
@@ -40,18 +37,16 @@ device = torch.device(args.device)
 
 # Load the input data and checkpoint
 print("Loading the input data and checkpoints.")
-# input_datafile = h5py.File(args.input_file, "r")
 output_datafile = h5py.File(args.output_file, 'w')
 checkpoint = torch.load(args.weights_file, map_location=device)
 
 output_list = []
 
 # Construct the model from the loaded data
-model = DeformablePOTR(
+model = POTR(
     build_backbone(checkpoint["args"]),
-    build_deformable_transformer(checkpoint["args"]),
-    num_queries=checkpoint["args"].num_queries,
-    num_feature_levels=checkpoint["args"].num_feature_levels
+    build_transformer(checkpoint["args"]),
+    num_queries=checkpoint["args"].num_queries
 )
 model.load_state_dict(checkpoint["model"])
 model.to(device)
@@ -67,7 +62,7 @@ for i, (samples) in enumerate(data_loader):
     samples = samples.to(device, dtype=torch.float32)
 
     results = model(samples).detach().cpu().numpy()
-    output_list.append(results)
+    output_list.extend(results)
 
 print("Predictions were made.")
 

@@ -9,7 +9,6 @@ structures, please implement your own logic. Either way, the `depth_maps` should
 
 import argparse
 import torch
-import io
 import h5py
 
 import numpy as np
@@ -20,7 +19,6 @@ from deformable_potr.models.deformable_potr import DeformablePOTR
 from deformable_potr.models.backbone import build_backbone
 from deformable_potr.models.deformable_transformer import build_deformable_transformer
 
-from dataset.dataset_processing import aug_morph_close
 from dataset.hpoes_dataset import HPOESOberwegerDataset
 
 
@@ -32,7 +30,6 @@ parser.add_argument("--input_file", type=str, default="in.h5",
                     help="Path to the .h5 file with input data (depth maps)")
 parser.add_argument("--output_file", type=str, default="out.h5", help="Path to the .h5 file to write into")
 parser.add_argument("--device", default="cpu", help="Device to be used")
-parser.add_argument("--tta", default=1, help="Whether to use Test Time Augmentation")
 parser.add_argument("--batch_size", default=1, type=int, help="Batch size")
 args = parser.parse_args()
 
@@ -40,7 +37,6 @@ device = torch.device(args.device)
 
 # Load the input data and checkpoint
 print("Loading the input data and checkpoints.")
-# input_datafile = h5py.File(args.input_file, "r")
 output_datafile = h5py.File(args.output_file, 'w')
 checkpoint = torch.load(args.weights_file, map_location=device)
 
@@ -67,7 +63,7 @@ for i, (samples) in enumerate(data_loader):
     samples = samples.to(device, dtype=torch.float32)
 
     results = model(samples).detach().cpu().numpy()
-    output_list.append(results)
+    output_list.extend(results)
 
 print("Predictions were made.")
 
