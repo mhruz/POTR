@@ -290,10 +290,10 @@ class SetCriterion(nn.Module):
         } for target in targets]
 
         # TEMP SAVING FUNCTIONALITY
-        with open("out_pickles/outputs_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
-            pickle.dump(outputs, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open("out_pickles/targets_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
-            pickle.dump(targets, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        #with open("out_pickles/outputs_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
+        #    pickle.dump(outputs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        #with open("out_pickles/targets_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
+        #    pickle.dump(targets, handle, protocol=pickle.HIGHEST_PROTOCOL)
         # END TEMP SAVING FUNCTIONALITY
 
         indices = self.matcher(outputs, targets)
