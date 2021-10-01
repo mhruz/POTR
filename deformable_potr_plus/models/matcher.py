@@ -80,7 +80,7 @@ class HungarianMatcher(nn.Module):
             pos_cost_class = alpha * ((1 - out_prob) ** gamma) * (-(out_prob + 1e-8).log())
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
 
-            # Compute the L1 cost between boxes
+            # Compute the L2 cost between boxes
             cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=2)
 
             # Compute the giou cost betwen boxes

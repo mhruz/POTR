@@ -167,16 +167,16 @@ def main(args):
     #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
 
     if args.sequence_length == 0:
-        #dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-        #                                      encoded=args.encoded, p_augment_3d=args.p_augment)
-        dataset_train = HPOESAdvancedDataset(args.train_data_path, transform=None)
+        dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+                                              encoded=args.encoded, p_augment_3d=args.p_augment)
+        #dataset_train = HPOESAdvancedDataset(args.train_data_path, transform=None)
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
                                                transform=args.p_augment, encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
-            #dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
-            dataset_eval = HPOESAdvancedDataset(args.train_data_path, transform=None)
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+            #dataset_eval = HPOESAdvancedDataset(args.train_data_path, transform=None)
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)
