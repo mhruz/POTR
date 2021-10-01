@@ -35,7 +35,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     # for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
     for item_index, (samples, targets) in enumerate(data_loader):
         #samples = [item.to(device, dtype=torch.float32) for item in samples]
-        samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
+        # OLD -> samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
+        samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
         logging.info("SAMPLES   Len: " + str(len(samples)) + ". Shape of #1: " + str(samples[0].shape))
