@@ -39,8 +39,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
-        logging.info("SAMPLES   Len: " + str(len(samples)) + ". Shape of #1: " + str(samples[0].shape))
-        logging.info("TARGETS   Len: " + str(len(targets)) + ". Shape of #1: " + str(targets[0].shape))
+        # logging.info("SAMPLES   Len: " + str(len(samples)) + ". Shape of #1: " + str(samples[0].shape))
+        # logging.info("TARGETS   Len: " + str(len(targets)) + ". Shape of #1: " + str(targets[0].shape))
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -84,6 +84,6 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
+    print("Averaged eval stats:", metric_logger)
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

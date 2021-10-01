@@ -107,12 +107,12 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
 
-    parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
+    parser.add_argument('--output_dir', default='train_test_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='Resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
-    parser.add_argument('--eval', action='store_true', help="Determines whether to perform evaluation on each epoch.")
+    parser.add_argument('--eval', default=True, action='store_true', help="Determines whether to perform evaluation on each epoch.")
     parser.add_argument('--num_workers', default=1, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
     parser.add_argument('--p_augment', default=0.5, type=float, help="Probability of applying augmentation.")
@@ -137,7 +137,7 @@ def main(args):
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler("experiment_name" + ".log")
+            logging.FileHandler("train_test_0" + ".log")
         ]
     )
 
