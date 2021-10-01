@@ -286,7 +286,7 @@ class SetCriterion(nn.Module):
 
         targets = [{
             "coords": target,
-            "labels": torch.tensor(list(range(21)))
+            "labels": torch.tensor(list(range(14)))
         } for target in targets]
 
         # TEMP SAVING FUNCTIONALITY

@@ -75,7 +75,7 @@ def get_args_parser():
                         help="Dropout applied in the transformer")
     parser.add_argument('--nheads', default=8, type=int,
                         help="Number of attention heads inside the transformer's attentions")
-    parser.add_argument('--num_classes', default=21, type=int,
+    parser.add_argument('--num_classes', default=14, type=int,
                         help="Number of classes for the joints to be labeled as (do not include the background class)")
     parser.add_argument('--num_queries', default=100, type=int, help="Number of query slots (number of landmarks to be regressed)")
     parser.add_argument('--dec_n_points', default=4, type=int)
