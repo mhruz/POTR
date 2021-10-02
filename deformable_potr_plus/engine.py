@@ -28,7 +28,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     model.train()
     criterion.train()
     header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 10
+    print_freq = 40
 
     losses_all = []
 
