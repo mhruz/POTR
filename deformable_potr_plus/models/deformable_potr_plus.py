@@ -253,7 +253,8 @@ class SetCriterion(nn.Module):
         src_coords = outputs["pred_coords"][idx]
         target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
-        loss_coords = F.smooth_l1_loss(src_coords, target_coords, reduction="none")
+        #loss_coords = F.smooth_l1_loss(src_coords, target_coords, reduction="none")
+        loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
         losses = {}
         losses['loss_coords'] = loss_coords.sum() / self.num_classes
 

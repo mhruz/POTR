@@ -107,7 +107,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
 
-    parser.add_argument('--output_dir', default='train_test_0', help="Path for saving of the resulting weights and overall model")
+    parser.add_argument('--output_dir', default='train_test_1_mse', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='Resume from checkpoint')
@@ -137,7 +137,7 @@ def main(args):
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler("train_test_0" + ".log")
+            logging.FileHandler("train_test_1_mse" + ".log")
         ]
     )
 
