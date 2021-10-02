@@ -74,7 +74,8 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
     header = 'Test:'
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-        samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
+        # OLD -> samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
+        samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
         outputs = model(samples)
