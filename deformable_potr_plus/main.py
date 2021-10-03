@@ -293,25 +293,18 @@ def main(args):
             checkpoint_paths = [os.path.join(output_dir, 'checkpoint.pth')]
             # extra checkpoint before LR drop and every N epochs
             if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % args.save_epoch == 0:
-                checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
+                #checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
+                checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, f'checkpoint{epoch:04}.pth'))
 
             if best_train_loss is None or train_stats["loss"] < best_train_loss:
-                try:
-                    os.remove(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
-                except:
-                    pass
-
-                checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
+                #checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
+                checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, 'checkpoint_best_train_loss.pth'))
                 best_train_loss = train_stats["loss"]
 
             if args.eval:
                 if best_val_loss is None or test_stats["loss"] < best_val_loss:
-                    try:
-                        os.remove(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
-                    except:
-                        pass
-
-                    checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
+                    #checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
+                    checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, 'checkpoint_best_val_loss.pth'))
                     best_val_loss = test_stats["loss"]
 
             for checkpoint_path in checkpoint_paths:
