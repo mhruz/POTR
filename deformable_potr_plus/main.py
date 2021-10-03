@@ -107,7 +107,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
 
-    parser.add_argument('--output_dir', default='train_test_1_mse', help="Path for saving of the resulting weights and overall model")
+    parser.add_argument('--output_dir', default='train_test_2_mse', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='Resume from checkpoint')
@@ -137,7 +137,7 @@ def main(args):
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler("train_test_1_mse" + ".log")
+            logging.FileHandler("train_test_2_mse" + ".log")
         ]
     )
 
@@ -294,11 +294,23 @@ def main(args):
             # extra checkpoint before LR drop and every N epochs
             if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % args.save_epoch == 0:
                 checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
+
             if best_train_loss is None or train_stats["loss"] < best_train_loss:
+                try:
+                    os.remove(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
+                except:
+                    pass
+
                 checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
                 best_train_loss = train_stats["loss"]
+
             if args.eval:
                 if best_val_loss is None or test_stats["loss"] < best_val_loss:
+                    try:
+                        os.remove(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
+                    except:
+                        pass
+
                     checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
                     best_val_loss = test_stats["loss"]
 
