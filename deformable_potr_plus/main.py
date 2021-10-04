@@ -308,18 +308,19 @@ def main(args):
                     best_val_loss = test_stats["loss"]
 
             for checkpoint_path in checkpoint_paths:
-                try:
-                    utils.save_on_master({
-                        'model': model_without_ddp.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        'lr_scheduler': lr_scheduler.state_dict(),
-                        'epoch': epoch,
-                        'args': args,
-                    }, checkpoint_path)
+                #try:
+                #    utils.save_on_master({
+                #        'model': model_without_ddp.state_dict(),
+                #        'optimizer': optimizer.state_dict(),
+                #        'lr_scheduler': lr_scheduler.state_dict(),
+                #        'epoch': epoch,
+                #        'args': args,
+                #   }, checkpoint_path)
 
-                except:
-                    print("Checkpointing failed.")
-                    logging.info("Checkpointing failed.")
+                #except:
+                #    print("Checkpointing failed.")
+                #    logging.info("Checkpointing failed.")
+                pass
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch,
