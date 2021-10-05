@@ -72,6 +72,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
+    mses = []
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         # OLD -> samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
@@ -80,6 +81,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
+        mses.append(criterion.get_mse_distances(outputs, targets))
 
         metric_logger.update(loss=sum(loss_dict.values()))
 
@@ -88,6 +90,6 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
     overall_eval_stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
     print("Averaged eval stats:", metric_logger)
-    logging.info("Averaged eval stats: loss: " + str(overall_eval_stats["loss"]))
+    logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(mses)))
 
     return overall_eval_stats

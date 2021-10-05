@@ -253,8 +253,7 @@ class SetCriterion(nn.Module):
         src_coords = outputs["pred_coords"][idx]
         target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
-        #loss_coords = F.smooth_l1_loss(src_coords, target_coords, reduction="none")
-        loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
+        loss_coords = F.smooth_l1_loss(src_coords, target_coords, reduction="none")
         losses = {}
         losses['loss_coords'] = loss_coords.sum() / self.num_classes
 
@@ -304,6 +303,22 @@ class SetCriterion(nn.Module):
             losses.update(self.get_loss(loss, outputs, targets, indices))
 
         return losses
+
+    def get_mse_distances(self, outputs, targets):
+        targets = [{
+            "coords": target,
+            "labels": torch.tensor(list(range(14)))
+        } for target in targets]
+
+        indices = self.matcher(outputs, targets)
+
+        idx = self._get_src_permutation_idx(indices)
+        src_coords = outputs["pred_coords"][idx]
+        target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
+
+        loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
+
+        return float(loss_coords) / len(targets) / self.num_classes
 
 
 class PostProcess(nn.Module):
