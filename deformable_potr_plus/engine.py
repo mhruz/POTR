@@ -89,7 +89,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
     metric_logger.synchronize_between_processes()
     overall_eval_stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
-    print("Averaged eval stats:", metric_logger)
+    print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(mses)))
     logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(mses)))
 
     return overall_eval_stats
