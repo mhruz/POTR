@@ -132,6 +132,14 @@ def aug_morph_close(image, **kwargs):
     return image
 
 
+def cropout(image, **kwargs):
+    transform = A.CoarseDropout(max_holes=5, min_holes=1, max_height=17, max_width=17, fill_value=-1)
+    image = image.copy()
+    transformed = transform(image=image)
+    image = transformed["image"]
+    return image
+
+
 def aug_translate_depth(image, keypoints, depth_mean=0.0, depth_std=0.1):
     random_translation = depth_mean + depth_std * np.random.randn()
 
@@ -161,6 +169,7 @@ def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_sc
             A.NoOp()
         ], p=p_apply),
         # A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
+        A.Lambda(image=cropout, keypoint=aug_keypoints, p=p_apply),
         A.Downscale(scale_min=0.5, scale_max=0.9, p=p_apply, interpolation=cv2.INTER_NEAREST_EXACT),
         A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
                            value=-1.0)
