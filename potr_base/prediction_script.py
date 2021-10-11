@@ -49,6 +49,7 @@ model = POTR(
     num_queries=checkpoint["args"].num_queries
 )
 model.load_state_dict(checkpoint["model"])
+model.eval()
 model.to(device)
 
 print("Constructed model successfully.")

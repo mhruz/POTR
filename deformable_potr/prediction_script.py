@@ -50,6 +50,7 @@ model = DeformablePOTR(
     num_feature_levels=checkpoint["args"].num_feature_levels
 )
 model.load_state_dict(checkpoint["model"])
+model.eval()
 model.to(device)
 
 print("Constructed model successfully.")
