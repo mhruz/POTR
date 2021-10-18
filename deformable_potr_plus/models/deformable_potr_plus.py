@@ -318,7 +318,7 @@ class SetCriterion(nn.Module):
 
         loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
 
-        return float(loss_coords) / len(targets) / self.num_classes
+        return (math.sqrt(float(loss_coords)) / len(targets) / self.num_classes) * 250
 
 
 class PostProcess(nn.Module):

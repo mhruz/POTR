@@ -29,6 +29,7 @@ from dataset import augmentation
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Deformable POTR Module', add_help=False)
+    parser.add_argument('--experiment_name', default="def_potr_plus_0", type=str)
     parser.add_argument('--lr', default=2e-4, type=float)
     parser.add_argument('--lr_backbone_names', default=["backbone.0"], type=str, nargs='+')
     parser.add_argument('--lr_backbone', default=2e-5, type=float)
@@ -107,7 +108,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
 
-    parser.add_argument('--output_dir', default='train_test_2_mse', help="Path for saving of the resulting weights and overall model")
+    parser.add_argument('--output_dir', default='def_potr_plus_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='Resume from checkpoint')
@@ -137,14 +138,15 @@ def main(args):
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler("train_test_2_mse" + ".log")
+            logging.FileHandler(args.experiment_name + ".log")
         ]
     )
 
+    logging.info(str(args))
+    print(args)
+
     utils.init_distributed_mode(args)
     print("git:\n  {}\n".format(utils.get_sha()))
-
-    print(args)
 
     device = torch.device(args.device)
 
@@ -239,6 +241,12 @@ def main(args):
 
     output_dir = Path(args.output_dir)
 
+    try:
+        os.makedirs(args.output_dir)
+
+    except FileExistsError:
+        pass
+
     if args.resume:
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(
@@ -293,33 +301,30 @@ def main(args):
             checkpoint_paths = [os.path.join(output_dir, 'checkpoint.pth')]
             # extra checkpoint before LR drop and every N epochs
             if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % args.save_epoch == 0:
-                #checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
-                checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, f'checkpoint{epoch:04}.pth'))
+                checkpoint_paths.append(os.path.join(output_dir, f'checkpoint{epoch:04}.pth'))
 
             if best_train_loss is None or train_stats["loss"] < best_train_loss:
-                #checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
-                checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, 'checkpoint_best_train_loss.pth'))
+                checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_train_loss.pth'))
                 best_train_loss = train_stats["loss"]
 
             if args.eval:
                 if best_val_loss is None or test_stats["loss"] < best_val_loss:
-                    #checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
-                    checkpoint_paths.append(os.path.join("/storage/brno3-cerit/home/mbohacek", args.output_dir, 'checkpoint_best_val_loss.pth'))
+                    checkpoint_paths.append(os.path.join(output_dir, 'checkpoint_best_val_loss.pth'))
                     best_val_loss = test_stats["loss"]
 
             for checkpoint_path in checkpoint_paths:
-                #try:
-                #    utils.save_on_master({
-                #        'model': model_without_ddp.state_dict(),
-                #        'optimizer': optimizer.state_dict(),
-                #        'lr_scheduler': lr_scheduler.state_dict(),
-                #        'epoch': epoch,
-                #        'args': args,
-                #   }, checkpoint_path)
+                try:
+                    utils.save_on_master({
+                        'model': model_without_ddp.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'lr_scheduler': lr_scheduler.state_dict(),
+                        'epoch': epoch,
+                        'args': args,
+                   }, checkpoint_path)
 
-                #except:
-                #    print("Checkpointing failed.")
-                #    logging.info("Checkpointing failed.")
+                except:
+                    print("Checkpointing failed.")
+                    logging.info("Checkpointing failed.")
                 pass
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
@@ -331,7 +336,7 @@ def main(args):
 
         if args.output_dir and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
-                #f.write(json.dumps(log_stats) + "\n")
+                f.write(json.dumps(log_stats) + "\n")
                 pass
 
     total_time = time.time() - start_time
