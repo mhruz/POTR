@@ -170,10 +170,10 @@ def augmentation(p_apply=0.5, limit_rotation=40, limit_translation=0.1, limit_sc
             A.NoOp()
         ], p=p_apply),
         # A.Lambda(image=aug_erode_or_dilate, keypoint=aug_keypoints, p=p_apply),
-        A.Lambda(image=cropout, keypoint=aug_keypoints, p=p_apply),
         A.Downscale(scale_min=0.5, scale_max=0.9, p=p_apply, interpolation=cv2.INTER_NEAREST_EXACT),
         A.ShiftScaleRotate(limit_translation, limit_scale, limit_rotation, p=p_apply, border_mode=cv2.BORDER_REFLECT101,
-                           value=-1.0)
+                           value=-1.0),
+        A.Lambda(image=cropout, keypoint=aug_keypoints, p=p_apply),
     ], keypoint_params=A.KeypointParams("xy", remove_invisible=False))
 
     return transform
