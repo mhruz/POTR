@@ -133,7 +133,8 @@ def aug_morph_close(image, **kwargs):
 
 
 def cropout(image, **kwargs):
-    transform = A.CoarseDropout(max_holes=5, min_holes=1, max_height=17, max_width=17, fill_value=-1)
+    transform = A.CoarseDropout(max_holes=8, min_holes=6, max_height=32, max_width=32, min_height=8, min_width=8,
+                                mask_fill_value=[-1, 1])
     image = image.copy()
     transformed = transform(image=image)
     image = transformed["image"]
