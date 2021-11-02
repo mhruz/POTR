@@ -26,10 +26,11 @@ def visualize_hpoes_data(filename: str):
         plt.show()
 
 
-def load_hpoes_data(filename: str):
+def load_hpoes_data(filename: str, mode: str):
     """
     Processes the data present in the given h5 file (cutouts of the depth maps, where hands interact with objects).
 
+    :param mode: train, eval, test
     :param filename: Path to the h5 file
     :return: Dictionary with the following items:
         - data: List of numpy.ndarrays with the depth maps (224x224)
@@ -46,19 +47,21 @@ def load_hpoes_data(filename: str):
         pdata = data_file["images"][str(record_index)][:].tostring()
         _file = io.BytesIO(pdata)
         data = np.load(_file)["arr_0"]
-        labels = data_file["labels"][record_index]
-
         output_depth_maps.append(data)
-        output_labels.append(labels)
+
+        if mode != 'test':
+            labels = data_file["labels"][record_index]
+            output_labels.append(labels)
 
     return {"data": output_depth_maps, "labels": output_labels}
 
 
-def load_encoded_hpoes_data(filename: str):
+def load_encoded_hpoes_data(filename: str, mode: str):
     """
     Reads the encoded hand pose data to memory. The decoding needs to be performed outside of this function. This is
     suitable, when the decoded data do not fit into memory.
 
+    :param mode: train, eval, test
     :param filename: Path to the h5 file
     :return: Dictionary with the following items:
         - data: List of bytes with the encoded depth maps (224x224)
@@ -73,10 +76,11 @@ def load_encoded_hpoes_data(filename: str):
 
     for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
-        labels = data_file["labels"][record_index]
-
         output_depth_maps.append(pdata)
-        output_labels.append(labels)
+
+        if mode != 'test':
+            labels = data_file["labels"][record_index]
+            output_labels.append(labels)
 
     return {"data": output_depth_maps, "labels": output_labels}
 

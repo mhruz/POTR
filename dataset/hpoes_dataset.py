@@ -176,9 +176,9 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         self.p_augment_3d = p_augment_3d
 
         if not encoded:
-            loaded_data = load_hpoes_data(dataset_filename)
+            loaded_data = load_hpoes_data(dataset_filename, mode=mode)
         else:
-            loaded_data = load_encoded_hpoes_data(dataset_filename)
+            loaded_data = load_encoded_hpoes_data(dataset_filename, mode=mode)
 
         data = loaded_data["data"]
         if mode == 'test':
