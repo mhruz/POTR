@@ -318,7 +318,13 @@ class SetCriterion(nn.Module):
 
         loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
 
-        return (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * 250
+        try:
+            res = (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * 250
+
+        except:
+            return 0
+
+        return res
 
 
 class PostProcess(nn.Module):
