@@ -114,7 +114,7 @@ def get_args_parser():
     parser.add_argument('--resume', default='', help='Resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
     parser.add_argument('--eval', default=True, action='store_true', help="Determines whether to perform evaluation on each epoch.")
-    parser.add_argument('--num_workers', default=1, type=int)
+    parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
     parser.add_argument('--p_augment', default=0.5, type=float, help="Probability of applying augmentation.")
     parser.add_argument('--encoded', default=0, type=int,
