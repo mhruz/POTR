@@ -302,8 +302,6 @@ class SetCriterion(nn.Module):
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices))
 
-        print(losses)
-
         return losses
 
     def get_mse_distances(self, outputs, targets):
