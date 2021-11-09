@@ -13,6 +13,7 @@ Deformable DETR model and criterion classes.
 
 import random
 import pickle
+import logging
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -301,6 +302,8 @@ class SetCriterion(nn.Module):
         losses = {}
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices))
+
+        logging.info(str(losses))
 
         return losses
 
