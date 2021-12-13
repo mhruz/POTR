@@ -107,6 +107,7 @@ def get_args_parser():
                         type=str, help="Path to the training dataset H5 file.")
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
+    # 300_cube
 
     parser.add_argument('--output_dir', default='def_potr_plus_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
