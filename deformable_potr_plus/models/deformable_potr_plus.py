@@ -329,6 +329,13 @@ class SetCriterion(nn.Module):
 
     def temp_avg_analysis(self, outputs, targets):
 
+        import pickle
+        with open("outputs.pickle", "wb") as f:
+            pickle.dump(outputs, f)
+        with open("targets.pickle", "wb") as f:
+            pickle.dump(targets, f)
+
+
         # Convert outputs to averaged class joints
         pred_class = torch.argmax(outputs["pred_logits"], dim=0)
         all_pred_coords = [[[] for _ in range(14)] for _ in range(len(targets))]
