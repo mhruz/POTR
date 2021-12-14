@@ -198,21 +198,22 @@ class DeformablePOTR(nn.Module):
 
         return {"pred_logits": outputs_class[-1], "pred_coords": outputs_coord[-1]}
 
-    def convert_outputs_average_decoding(self, outputs):
+    def convert_outputs_average_decoding(self, model_outputs):
         """
+        Decodes the resulting coordinates by averaging all queries which predicted (claimed) to be of the given class.
         
-        :param outputs: 
-        :return: 
+        :param model_outputs: Outputs from the DeformablePOTR model
+        :return: Predicted averaged coordinates tensor (batch, num_class, num_dim)
         """""
 
         # Convert outputs to averaged class joints
-        pred_class = torch.argmax(outputs["pred_logits"], dim=2)
-        all_pred_coords = [[[] for _ in range(14)] for _ in range(len(outputs["pred_logits"]))]
+        pred_class = torch.argmax(model_outputs["pred_logits"], dim=2)
+        all_pred_coords = [[[] for _ in range(14)] for _ in range(len(model_outputs["pred_logits"]))]
 
-        for target_i in range(len(outputs["pred_logits"])):
+        for target_i in range(len(model_outputs["pred_logits"])):
             for i, c in enumerate(pred_class[target_i, :]):
                 if c.item() != 14:
-                    all_pred_coords[target_i][c.item()].append(outputs["pred_coords"][target_i, i])
+                    all_pred_coords[target_i][c.item()].append(model_outputs["pred_coords"][target_i, i])
 
         all_pred_coords = [[torch.stack(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(1, 3) for joint_i in range(14)] for target_i in range(len(outputs["pred_logits"]))]
         avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
@@ -325,6 +326,15 @@ class SetCriterion(nn.Module):
         return losses
 
     def get_avg_L2_prediction_error_hungarian_matcher_decoding(self, outputs, targets):
+        """
+        Decodes the outputs using Hungarian matcher and calculates the average L2 distance (prediction error) per batch
+        per single joint.
+
+        :param outputs:
+        :param targets:
+        :return: Average prediction error (in millimeters)
+        """
+
         targets = [{
             "coords": target,
             "labels": torch.tensor(list(range(14)))
@@ -339,6 +349,13 @@ class SetCriterion(nn.Module):
         return self.calculate_avg_L2_distance(src_coords, target_coords)
 
     def calculate_avg_L2_distance(self, output_coords, target_coords):
+        """
+        Calculates the average L2 distance (prediction error) per batch per single joint.
+
+        :param output_coords:
+        :param target_coords:
+        :return: Average prediction error (in millimeters)
+        """
 
         try:
             # Obtain the average L2 distance per a single joint estimation (therefore the overall result is divided by
