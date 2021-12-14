@@ -198,6 +198,28 @@ class DeformablePOTR(nn.Module):
 
         return {"pred_logits": outputs_class[-1], "pred_coords": outputs_coord[-1]}
 
+    def convert_outputs_average_decoding(self, outputs):
+        """
+        
+        :param outputs: 
+        :return: 
+        """""
+
+        # Convert outputs to averaged class joints
+        pred_class = torch.argmax(outputs["pred_logits"], dim=2)
+        all_pred_coords = [[[] for _ in range(14)] for _ in range(len(outputs["pred_logits"]))]
+
+        for target_i in range(len(outputs["pred_logits"])):
+            for i, c in enumerate(pred_class[target_i, :]):
+                if c.item() != 14:
+                    all_pred_coords[target_i][c.item()].append(outputs["pred_coords"][target_i, i])
+
+        all_pred_coords = [[torch.stack(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(1, 3) for joint_i in range(14)] for target_i in range(len(outputs["pred_logits"]))]
+        avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
+        avg_output_coords = torch.stack([torch.stack(target_batch) for target_batch in avg_pred_coords])
+
+        return avg_output_coords
+
 
 class SetCriterion(nn.Module):
     """ This class computes the loss for POTR.
@@ -302,7 +324,7 @@ class SetCriterion(nn.Module):
 
         return losses
 
-    def get_average_L2_prediction_error(self, outputs, targets):
+    def get_avg_L2_prediction_error_hungarian_matcher_decoding(self, outputs, targets):
         targets = [{
             "coords": target,
             "labels": torch.tensor(list(range(14)))
@@ -314,56 +336,23 @@ class SetCriterion(nn.Module):
         src_coords = outputs["pred_coords"][idx]
         target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
-        loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
+        return self.calculate_avg_L2_distance(src_coords, target_coords)
+
+    def calculate_avg_L2_distance(self, output_coords, target_coords):
 
         try:
             # Obtain the average L2 distance per a single joint estimation (therefore the overall result is divided by
             # the number of targets and classes) and convert this relative distance form (as the dataset target values
             # are on the [-1; 1] range to absolute mms
-            res = (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * (self.cube_size * 2)
+            loss_coords = F.mse_loss(output_coords, target_coords, reduction="none")
+            res = (math.sqrt(float(torch.sum(loss_coords))) / len(target_coords) / self.num_classes) * (self.cube_size * 2)
 
         except:
+            logging.warning("A problem ocurred during L2 error calculation!")
             return 0
 
         return res
 
-    def temp_avg_analysis(self, outputs, targets):
-
-        import pickle
-        with open("outputs.pickle", "wb") as f:
-            pickle.dump({"pred_logits": outputs["pred_logits"].cpu(), "pred_coords": outputs["pred_coords"].cpu()}, f)
-        with open("targets.pickle", "wb") as f:
-            pickle.dump([target.cpu() for target in targets], f)
-
-
-        # Convert outputs to averaged class joints
-        pred_class = torch.argmax(outputs["pred_logits"], dim=0)
-        all_pred_coords = [[[] for _ in range(14)] for _ in range(len(targets))]
-
-        for target_i in range(len(targets)):
-            for i, c in enumerate(pred_class[target_i, :]):
-                if c.item() != 14:
-                    all_pred_coords[target_i][c.item()].append(outputs["pred_coords"][target_i, i])
-
-        all_pred_coords = [[torch.cat(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(3) for joint_i in range(14)] for target_i in range(len(targets))]
-        logging.info(str(all_pred_coords[0]))
-        logging.info(str(all_pred_coords[0][0]))
-        avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
-        logging.info(str(avg_pred_coords[0]))
-        logging.info(str(avg_pred_coords[0][0]))
-        avg_output_coords = torch.stack([torch.cat(target_batch) for target_batch in avg_pred_coords])
-
-        logging.info("!!!")
-        logging.info(str(avg_output_coords.shape, torch.stack(targets).shape))
-
-        try:
-            loss_coords = F.mse_loss(avg_output_coords, torch.stack(targets), reduction="none")
-            res = (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * (self.cube_size * 2)
-
-        except:
-            return 0
-
-        return res
 
 class PostProcess(nn.Module):
     """ This module converts the model's output into the format expected by the coco api"""

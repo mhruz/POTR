@@ -42,9 +42,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
         losses_all.append(losses)
 
-        # TEMP
-        criterion.temp_avg_analysis(outputs, targets)
-
         optimizer.zero_grad()
         losses.backward()
         optimizer.step()
@@ -68,7 +65,9 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
+
     l2_pred_error_distances = []
+    l2_pred_error_distances_result_averaging = []
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = [item.to(device, dtype=torch.float32) for item in samples]
@@ -76,16 +75,19 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
-        l2_pred_error_distances.append(criterion.get_average_L2_prediction_error(outputs, targets))
+
+        l2_pred_error_distances.append(criterion.get_avg_L2_prediction_error_hungarian_matcher_decoding(outputs, targets))
+        l2_pred_error_distances_result_averaging.append(criterion.calculate_avg_L2_distance(model.convert_outputs_average_decoding(outputs), torch.stack(targets)))
 
         metric_logger.update(loss=sum(loss_dict.values()))
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     overall_eval_stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-    overall_eval_stats["error_distance"] = statistics.mean(l2_pred_error_distances)
+    overall_eval_stats["error_distance_matched_decoding"] = statistics.mean(l2_pred_error_distances)
+    overall_eval_stats["error_distance_average_decoding"] = statistics.mean(l2_pred_error_distances_result_averaging)
 
-    print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm")
-    logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm")
+    print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance (decoded via matcher): " + str(statistics.mean(l2_pred_error_distances)) + " mm" + ", error distance (decoded via averagining): " + str(statistics.mean(l2_pred_error_distances_result_averaging)) + " mm")
+    logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm" + ", error distance (decoded via averagining): " + str(statistics.mean(l2_pred_error_distances_result_averaging)) + " mm")
 
     return overall_eval_stats
