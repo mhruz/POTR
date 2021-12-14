@@ -331,9 +331,9 @@ class SetCriterion(nn.Module):
 
         import pickle
         with open("outputs.pickle", "wb") as f:
-            pickle.dump(outputs.cpu(), f)
+            pickle.dump({"pred_logits": outputs["pred_logits"].cpu(), "pred_coords": outputs["pred_coords"].cpu()}, f)
         with open("targets.pickle", "wb") as f:
-            pickle.dump(targets.cpu(), f)
+            pickle.dump([target.cpu() for target in targets], f)
 
 
         # Convert outputs to averaged class joints
