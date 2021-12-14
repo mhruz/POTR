@@ -9,14 +9,17 @@ structures, please implement your own logic. Either way, the `depth_maps` should
 
 import argparse
 import torch
-import io
 import h5py
 
 import numpy as np
 
+from torch.utils.data import DataLoader
+
 from potr_base.models.potr import POTR
 from potr_base.models.backbone import build_backbone
 from potr_base.models.transformer import build_transformer
+
+from dataset.hpoes_dataset import HPOESOberwegerDataset
 
 
 # Arguments
@@ -27,31 +30,17 @@ parser.add_argument("--input_file", type=str, default="in.h5",
                     help="Path to the .h5 file with input data (depth maps)")
 parser.add_argument("--output_file", type=str, default="out.h5", help="Path to the .h5 file to write into")
 parser.add_argument("--device", default="cpu", help="Device to be used")
+parser.add_argument("--batch_size", default=1, type=int, help="Batch size")
 args = parser.parse_args()
 
 device = torch.device(args.device)
 
 # Load the input data and checkpoint
 print("Loading the input data and checkpoints.")
-input_datafile = h5py.File(args.input_file, "r")
 output_datafile = h5py.File(args.output_file, 'w')
 checkpoint = torch.load(args.weights_file, map_location=device)
 
-depth_maps_list = []
 output_list = []
-
-# Depth maps loading logic
-num_img = len(input_datafile["images"])
-# num_img = 1000
-for record_index in range(num_img):
-    print(record_index)
-    pdata = input_datafile["images"][str(record_index)][:].tostring()
-    _file = io.BytesIO(pdata)
-    data = np.load(_file)["arr_0"]
-    depth_maps_list.append(data)
-
-depth_maps = np.asarray(depth_maps_list)
-print("Structured input successfully.")
 
 # Construct the model from the loaded data
 model = POTR(
@@ -60,17 +49,21 @@ model = POTR(
     num_queries=checkpoint["args"].num_queries
 )
 model.load_state_dict(checkpoint["model"])
+model.eval()
 model.to(device)
 
 print("Constructed model successfully.")
 
-# Iterate over the depth maps and structure the predictions
-for i, depth_map in enumerate(depth_maps):
-    dm_tensor = torch.from_numpy(depth_map)
-    dm_unsqueezed = dm_tensor.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32)
+dataset_test = HPOESOberwegerDataset(args.input_file, encoded=True, mode='test')
+data_loader = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=0, shuffle=False)
 
-    results = model([dm_unsqueezed]).detach().cpu().numpy()
-    output_list.append(results)
+# Iterate over the depth maps and structure the predictions
+for i, (samples) in enumerate(data_loader):
+    print(i)
+    samples = samples.to(device, dtype=torch.float32)
+
+    results = model(samples).detach().cpu().numpy()
+    output_list.extend(results)
 
 print("Predictions were made.")
 

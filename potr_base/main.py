@@ -84,6 +84,7 @@ def get_args_parser():
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='',
                         help="HTTP address or full directory of the model to resume training on (ignored if empty)")
+    parser.add_argument('--init_weights', default='', help='Init network with custom weights (path to weights)')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help="Starting epoch index")
     parser.add_argument('--eval', default=False, action='store_true',
                         help="Determines whether to apply evaluation on each epoch.")
@@ -151,16 +152,16 @@ def main(args):
 
     if args.sequence_length == 0:
         dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                                                                    encoded=args.encoded)
+                                                                                    encoded=args.encoded, mode='train')
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
-                                               transform=args.p_augment, encoded=args.encoded)
+                                               transform=args.p_augment, encoded=args.encoded, mode='train')
     if args.eval:
         if args.sequence_length == 0:
-            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded, mode='eval')
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
-                                                  encoded=args.encoded)
+                                                  encoded=args.encoded, mode='eval')
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)
@@ -184,6 +185,16 @@ def main(args):
         model_without_ddp.potr.load_state_dict(checkpoint['model'])
 
     output_dir = Path(args.output_dir)
+
+    if args.init_weights:
+        checkpoint = torch.load(args.init_weights, map_location=device)
+        missing_keys, unexpected_keys = model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
+        unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
+        if len(missing_keys) > 0:
+            print('Missing Keys: {}'.format(missing_keys))
+        if len(unexpected_keys) > 0:
+            print('Unexpected Keys: {}'.format(unexpected_keys))
+
     if args.resume:
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(

@@ -7,7 +7,8 @@ import io
 import numpy as np
 import torch.utils.data as torch_data
 
-from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data, aug_translate_depth
+from dataset.dataset_processing import load_hpoes_data, load_encoded_hpoes_data, aug_translate_depth, \
+    aug_morph_close, aug_keypoints
 
 import cv2
 import matplotlib.pyplot as plt
@@ -162,31 +163,43 @@ class HPOESOberwegerDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, encoded=True, transform=None, p_augment_3d=0.0):
+    def __init__(self, dataset_filename: str, encoded=True, transform=None, p_augment_3d=0.0, mode: str = 'test'):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
 
         :param dataset_filename: Path to the h5 file
         :param transform: Any data transformation to be applied (default: None)
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
+        :param mode: train, eval, test
         """
         self.encoded = encoded
         self.p_augment_3d = p_augment_3d
 
         if not encoded:
-            loaded_data = load_hpoes_data(dataset_filename)
+            loaded_data = load_hpoes_data(dataset_filename, mode=mode)
         else:
-            loaded_data = load_encoded_hpoes_data(dataset_filename)
+            loaded_data = load_encoded_hpoes_data(dataset_filename, mode=mode)
 
-        data, labels = loaded_data["data"], loaded_data["labels"]
-
-        # Prevent from initiating with invalid data
-        if len(data) != len(labels):
-            logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
+        data = loaded_data["data"]
+        if mode == 'test':
+            labels = None
+        else:
+            labels = loaded_data["labels"]
+            # Prevent from initiating with invalid data
+            if len(data) != len(labels):
+                logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
 
         self.data = data
         self.labels = labels
         self.transform = transform
+        self.mode = mode
+
+    @staticmethod
+    def preprocessing():
+        transform = A.Compose([
+            A.Lambda(image=aug_morph_close, keypoint=aug_keypoints, p=1.0),
+        ])
+        return transform
 
     def __getitem__(self, idx):
         """
@@ -203,7 +216,21 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         else:
             depth_map = self.data[idx]
 
-        label = self.labels[idx]
+        if self.labels:
+            label = self.labels[idx]
+        else:
+            label = None
+
+        if self.mode == 'test' or self.mode == 'eval':
+            preprocessing = self.preprocessing()
+            transformed = preprocessing(image=depth_map)
+            depth_map = transformed["image"]
+            depth_map = torch.from_numpy(depth_map)
+            depth_map = depth_map.unsqueeze(0).expand(3, 224, 224)
+            if label is not None:
+                label = torch.from_numpy(np.asarray(label))
+                return depth_map, label
+            return depth_map
 
         # Perform any additionally desired transformations
         if self.transform:
@@ -250,7 +277,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         return depth_map, label
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.data)
 
 
 class HPOESSequentialDataset(torch_data.Dataset):
@@ -262,7 +289,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
     labels: [np.ndarray]
 
     def __init__(self, dataset_filename: str, sequence_length=3, encoded=True, transform=0.0,
-                 p_augment_3d=0.0):
+                 p_augment_3d=0.0, mode: str = 'test'):
         """
         Initiates the HPOESSequentialDataset with the pre-loaded data from the h5 file.
 
@@ -271,6 +298,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
         :param transform: Probability of 2D augmentations (default: 0.0)
         :param p_augment_3d: Probability of 3D augmentations (default: 0.0)
+        :param mode: train, eval, test
         """
         self.encoded = encoded
 
@@ -279,11 +307,14 @@ class HPOESSequentialDataset(torch_data.Dataset):
         else:
             loaded_data = load_encoded_hpoes_data(dataset_filename)
 
-        data, labels = loaded_data["data"], loaded_data["labels"]
-
-        # Prevent from initiating with invalid data
-        if len(data) != len(labels):
-            logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
+        data = loaded_data["data"]
+        if mode == 'test':
+            labels = None
+        else:
+            labels = loaded_data["labels"]
+            # Prevent from initiating with invalid data
+            if len(data) != len(labels):
+                logging.error("The size of the data (depth maps) list is not equal to the size of the labels list.")
 
         if (sequence_length % 2) == 0:
             logging.info("Sequence length has to be odd. We will replace it for you.")
@@ -294,6 +325,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
         self.labels = labels
         self.p_augment_3d = p_augment_3d
         self.transform = transform
+        self.mode = mode
         self.rand_choice = 0
         self.dilate_size = 3
         self.erode_size = 3
@@ -320,19 +352,6 @@ class HPOESSequentialDataset(torch_data.Dataset):
         image = -image
 
         return image
-
-    def deterministic_sequence_augmentation(self):
-        if self.rand_choice == 1:
-            augm = A.Lambda(image=self.aug_dilate, keypoint=self.aug_keypoints)
-        elif self.rand_choice == 2:
-            augm = A.Lambda(image=self.aug_erode, keypoint=self.aug_keypoints)
-        else:
-            augm = A.NoOp()
-        transform = A.Compose([
-            A.Lambda(image=self.aug_morph_close, keypoint=self.aug_keypoints, p=1.0),
-            augm])
-
-        return transform
 
     @staticmethod
     def aug_morph_close(image, **kwargs):
@@ -369,6 +388,12 @@ class HPOESSequentialDataset(torch_data.Dataset):
 
         return transform
 
+    def sequence_preprocessing(self):
+        transform = A.Compose([
+            A.Lambda(image=self.aug_morph_close, keypoint=self.aug_keypoints, p=1.0),
+        ], additional_targets={'image1': 'image', 'image2': 'image'})
+        return transform
+
     def __getitem__(self, idx):
         """
         Allocates, potentially transforms and returns the item at the desired index.
@@ -397,7 +422,22 @@ class HPOESSequentialDataset(torch_data.Dataset):
                 next_frame = np.expand_dims(next_frame, axis=0)
                 depth_map = np.vstack((depth_map, next_frame))
 
-        label = self.labels[idx]
+        if self.labels:
+            label = self.labels[idx]
+        else:
+            label = None
+
+        if self.mode == 'test' or self.mode == 'eval':
+            preprocessing = self.sequence_preprocessing()
+            transformed = preprocessing(image=depth_map[0], image1=depth_map[1], image2=depth_map[2])
+            depth_map[0] = transformed["image"]
+            depth_map[1] = transformed["image1"]
+            depth_map[2] = transformed["image2"]
+            depth_map = torch.from_numpy(depth_map)
+            if label is not None:
+                label = torch.from_numpy(np.asarray(label))
+                return depth_map, label
+            return depth_map
 
         # Perform any additionally desired transformations
         if self.transform > 0:
@@ -413,7 +453,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
             keypoints = label[:, :2].tolist()
 
             transformed = det_transform(image=depth_map[0], image1=depth_map[1], image2=depth_map[2],
-                                         keypoints=keypoints)
+                                        keypoints=keypoints)
             depth_map[0] = transformed["image"]
             depth_map[1] = transformed["image1"]
             depth_map[2] = transformed["image2"]
@@ -437,8 +477,7 @@ class HPOESSequentialDataset(torch_data.Dataset):
         return depth_map, label
 
     def __len__(self):
-        return len(self.labels)
-
+        return len(self.data)
 
 if __name__ == "__main__":
     ds = HPOESAdvancedDataset("train_image.h5")
