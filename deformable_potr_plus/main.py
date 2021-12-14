@@ -41,9 +41,7 @@ def get_args_parser():
     parser.add_argument('--lr_drop', default=40, type=int)
     parser.add_argument('--lr_drop_epochs', default=None, type=int, nargs='+')
     parser.add_argument('--save_epoch', default=5, type=int, help='interval of saving the model (in epochs)')
-    parser.add_argument('--clip_max_norm', default=0.1, type=float,
-                        help='gradient clipping max norm')
-
+    parser.add_argument('--clip_max_norm', default=0.1, type=float, help='gradient clipping max norm')
     parser.add_argument('--sgd', action='store_true')
 
     # Parametrs: Deformable DETR Variants
@@ -107,7 +105,7 @@ def get_args_parser():
                         type=str, help="Path to the training dataset H5 file.")
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
-    # 300_cube
+    parser.add_argument('--cube_size', default=250, type=int, help="The milimeter size of the cube in which the hand coordinates are located")
 
     parser.add_argument('--output_dir', default='def_potr_plus_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
@@ -164,22 +162,15 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Number of parameters:", n_parameters)
 
-    # Load HPOES data from the same source
-    # dataset_train = HPOESAdvancedDataset(args.train_data_path)
-    # if args.eval:
-    #     dataset_eval = HPOESAdvancedDataset(args.eval_data_path)
-
     if args.sequence_length == 0:
         dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
                                               encoded=args.encoded, p_augment_3d=args.p_augment)
-        #dataset_train = HPOESAdvancedDataset(args.train_data_path, transform=None)
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
                                                transform=args.p_augment, encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
             dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded)
-            #dataset_eval = HPOESAdvancedDataset(args.train_data_path, transform=None)
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)

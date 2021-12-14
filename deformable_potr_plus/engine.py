@@ -29,18 +29,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     criterion.train()
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 200
-
     losses_all = []
 
-    # for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
     for item_index, (samples, targets) in enumerate(data_loader):
-        #samples = [item.to(device, dtype=torch.float32) for item in samples]
-        # OLD -> samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
-
-        # logging.info("SAMPLES   Len: " + str(len(samples)) + ". Shape of #1: " + str(samples[0].shape))
-        # logging.info("TARGETS   Len: " + str(len(targets)) + ". Shape of #1: " + str(targets[0].shape))
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -58,7 +51,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             logging.info(header + " [{0}/{1}]".format(item_index + 1, len(data_loader)) + " lr: " + str(optimizer.param_groups[0]["lr"]) + " loss: " + str(losses_all[-1].item()))
 
     converted_losses = [i.item() for i in losses_all]
-    # gather the stats from all processes
+
     print(header, "Averaged stats:", "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(statistics.mean(converted_losses)))
     logging.info(header + " Averaged stats:" + " lr: " + str(optimizer.param_groups[0]["lr"]) + " loss: " + str(statistics.mean(converted_losses)))
 
@@ -72,25 +65,24 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    mses = []
+    l2_pred_error_distances = []
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-        # OLD -> samples = [item.unsqueeze(0).expand(3, 224, 224).to(device, dtype=torch.float32) for item in samples]
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
-        mses.append(criterion.get_mse_distances(outputs, targets))
+        l2_pred_error_distances.append(criterion.get_average_L2_prediction_error(outputs, targets))
 
         metric_logger.update(loss=sum(loss_dict.values()))
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     overall_eval_stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-    overall_eval_stats["error_distance"] = statistics.mean(mses)
+    overall_eval_stats["error_distance"] = statistics.mean(l2_pred_error_distances)
 
-    print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(mses)) + " mm")
-    logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(mses)) + " mm")
+    print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm")
+    logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm")
 
     return overall_eval_stats

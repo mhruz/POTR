@@ -206,7 +206,7 @@ class SetCriterion(nn.Module):
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
 
-    def __init__(self, num_classes, matcher, weight_dict, losses, focal_alpha=0.25):
+    def __init__(self, num_classes, matcher, weight_dict, losses, focal_alpha=0.25, cube_size=300):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -214,6 +214,7 @@ class SetCriterion(nn.Module):
             weight_dict: dict containing as key the names of the losses and as values their relative weight.
             losses: list of all the losses to be applied. See get_loss for list of available losses.
             focal_alpha: alpha in Focal Loss
+            cube_size: the milimeter size of the cube in which the hand coordinates are located
         """
 
         super().__init__()
@@ -223,6 +224,7 @@ class SetCriterion(nn.Module):
         self.weight_dict = weight_dict
         self.losses = losses
         self.focal_alpha = focal_alpha
+        self.cube_size = cube_size
 
     def loss_labels(self, outputs, targets, indices):
 
@@ -290,13 +292,6 @@ class SetCriterion(nn.Module):
             "labels": torch.tensor(list(range(14)))
         } for target in targets]
 
-        # TEMP SAVING FUNCTIONALITY
-        #with open("out_pickles/outputs_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
-        #    pickle.dump(outputs, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        #with open("out_pickles/targets_" + str(random.randint(0, 99999)) + ".pickle", 'wb') as handle:
-        #    pickle.dump(targets, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        # END TEMP SAVING FUNCTIONALITY
-
         indices = self.matcher(outputs, targets)
 
         losses = {}
@@ -307,7 +302,7 @@ class SetCriterion(nn.Module):
 
         return losses
 
-    def get_mse_distances(self, outputs, targets):
+    def get_average_L2_prediction_error(self, outputs, targets):
         targets = [{
             "coords": target,
             "labels": torch.tensor(list(range(14)))
@@ -322,7 +317,10 @@ class SetCriterion(nn.Module):
         loss_coords = F.mse_loss(src_coords, target_coords, reduction="none")
 
         try:
-            res = (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * 250
+            # Obtain the average L2 distance per a single joint estimation (therefore the overall result is divided by
+            # the number of targets and classes) and convert this relative distance form (as the dataset target values
+            # are on the [-1; 1] range to absolute mms
+            res = (math.sqrt(float(torch.sum(loss_coords))) / len(targets) / self.num_classes) * (self.cube_size * 2)
 
         except:
             return 0
@@ -401,7 +399,7 @@ def build(args):
     weight_dict = {"loss_coords": 1, "labels": 1}
     losses = ['coords', "labels"]
 
-    criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses)
+    criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses, cube_size=args.cube_size)
     criterion.to(device)
 
     return model, criterion
