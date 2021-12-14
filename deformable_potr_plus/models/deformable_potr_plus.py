@@ -338,7 +338,7 @@ class SetCriterion(nn.Module):
                 if c.item() != 14:
                     all_pred_coords[target_i][c.item()].append(outputs["pred_coords"][target_i, i])
 
-        all_pred_coords = [[torch.concat(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(3) for joint_i in range(14)] for target_i in range(len(targets))]
+        all_pred_coords = [[torch.cat(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(3) for joint_i in range(14)] for target_i in range(len(targets))]
         avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
 
         avg_output_coords = torch.stack([torch.cat(target_batch) for target_batch in avg_pred_coords])
