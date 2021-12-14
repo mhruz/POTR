@@ -85,12 +85,8 @@ def get_args_parser():
                         help="Disables auxiliary decoding losses (loss at each layer)")
 
     #   -> Matcher
-    parser.add_argument('--set_cost_class', default=2, type=float,
-                        help="Class coefficient in the matching cost")
-    parser.add_argument('--set_cost_bbox', default=5, type=float,
-                        help="L1 box coefficient in the matching cost")
-    parser.add_argument('--set_cost_giou', default=2, type=float,
-                        help="giou box coefficient in the matching cost")
+    parser.add_argument('--set_cost_class', default=2, type=float, help="Class coefficient in the matching cost")
+    parser.add_argument('--set_cost_coord', default=5, type=float, help="Coordinate distance coefficient in the matching cost")
 
     #   -> Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
