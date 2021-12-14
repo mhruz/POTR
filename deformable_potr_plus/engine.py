@@ -42,6 +42,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
         losses_all.append(losses)
 
+        # TEMP
+        criterion.temp_avg_analysis(outputs, targets)
+
         optimizer.zero_grad()
         losses.backward()
         optimizer.step()

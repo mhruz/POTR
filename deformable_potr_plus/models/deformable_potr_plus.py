@@ -327,6 +327,16 @@ class SetCriterion(nn.Module):
 
         return res
 
+    def temp_avg_analysis(self, outputs, targets):
+
+        # Convert outputs to averaged class joints
+        logging.info("XXX")
+        logging.info(str(outputs["pred_logits"].shape))
+        logging.info(str(outputs["pred_coords"].shape))
+
+        logging.info(len(targets))
+        logging.info(str(targets[0].shape))
+
 
 class PostProcess(nn.Module):
     """ This module converts the model's output into the format expected by the coco api"""
