@@ -273,7 +273,7 @@ def main(args):
             args.start_epoch = checkpoint['epoch'] + 1
 
         if args.eval:
-            test_stats = evaluate(model, criterion, data_loader_eval, device)
+            test_stats = evaluate(model, criterion, data_loader_eval, device, log_wandb=bool(args.wandb_key))
 
         return
 
@@ -285,11 +285,11 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             sampler_train.set_epoch(epoch)
-        train_stats = train_one_epoch(model, criterion, data_loader_train, optimizer, device, epoch)
+        train_stats = train_one_epoch(model, criterion, data_loader_train, optimizer, device, epoch, log_wandb=bool(args.wandb_key))
         lr_scheduler.step()
 
         if args.eval:
-            test_stats = evaluate(model, criterion, data_loader_eval, device)
+            test_stats = evaluate(model, criterion, data_loader_eval, device, log_wandb=bool(args.wandb_key))
 
         if args.output_dir:
             checkpoint_paths = [os.path.join(output_dir, 'checkpoint.pth')]
@@ -324,12 +324,6 @@ def main(args):
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch,
                      'n_parameters': n_parameters}
-
-        if args.wandb_key:
-            wandb.log({**{f'train_{k}': v for k, v in train_stats.items()},
-                         'epoch': epoch,
-                         'n_parameters': n_parameters})
-            wandb.log({f'test_{k}': v for k, v in test_stats.items()})
 
         if args.eval:
             log_stats.update({f'test_{k}': v for k, v in test_stats.items()})

@@ -267,6 +267,9 @@ class SetCriterion(nn.Module):
                   src_logits.shape[1]
         losses = {'loss_ce': loss_ce}
 
+        # Only for informative logging purposes
+        losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+
         return losses
 
     def loss_coords(self, outputs, targets, indices):

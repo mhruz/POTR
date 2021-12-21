@@ -15,6 +15,7 @@ import logging
 import statistics
 import math
 import sys
+import wandb
 from typing import Iterable
 
 import torch
@@ -24,7 +25,7 @@ from deformable_potr_plus.datasets.data_prefetcher import data_prefetcher
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int):
+                    device: torch.device, epoch: int, log_wandb=False):
     model.train()
     criterion.train()
     header = 'Epoch: [{}]'.format(epoch)
@@ -50,6 +51,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             print(header, "[{0}/{1}]".format(item_index + 1, len(data_loader)), "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(losses_all[-1].item()))
             logging.info(header + " [{0}/{1}]".format(item_index + 1, len(data_loader)) + " lr: " + str(optimizer.param_groups[0]["lr"]) + " loss: " + str(losses_all[-1].item()))
 
+            if log_wandb:
+                wandb.log({**{f'train_{k}': v for k, v in loss_dict.items()},
+                           'train_loss': losses_all[-1].item(),
+                           'epoch': epoch,
+                           'lr': optimizer.param_groups[0]["lr"]})
+
     converted_losses = [i.item() for i in losses_all]
 
     print(header, "Averaged stats:", "lr: " + str(optimizer.param_groups[0]["lr"]), "loss: " + str(statistics.mean(converted_losses)))
@@ -59,7 +66,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
 @torch.no_grad()
-def evaluate(model, criterion, data_loader, device, print_freq=10):
+def evaluate(model, criterion, data_loader, device, print_freq=10, log_wandb=False):
     model.eval()
     criterion.eval()
 
@@ -86,6 +93,9 @@ def evaluate(model, criterion, data_loader, device, print_freq=10):
     overall_eval_stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
     overall_eval_stats["error_distance_matched_decoding"] = statistics.mean(l2_pred_error_distances)
     overall_eval_stats["error_distance_average_decoding"] = statistics.mean(l2_pred_error_distances_result_averaging)
+
+    if log_wandb:
+        wandb.log({f'test_{k}': v for k, v in overall_eval_stats.items()})
 
     print("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance (decoded via matcher): " + str(statistics.mean(l2_pred_error_distances)) + " mm" + ", error distance (decoded via averagining): " + str(statistics.mean(l2_pred_error_distances_result_averaging)) + " mm")
     logging.info("Averaged eval stats – loss: " + str(overall_eval_stats["loss"]) + ", error distance: " + str(statistics.mean(l2_pred_error_distances)) + " mm" + ", error distance (decoded via averagining): " + str(statistics.mean(l2_pred_error_distances_result_averaging)) + " mm")
