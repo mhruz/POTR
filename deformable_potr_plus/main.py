@@ -89,12 +89,8 @@ def get_args_parser():
     parser.add_argument('--set_cost_coord', default=5, type=float, help="Coordinate distance coefficient in the matching cost")
 
     #   -> Loss coefficients
-    parser.add_argument('--mask_loss_coef', default=1, type=float)
-    parser.add_argument('--dice_loss_coef', default=1, type=float)
-    parser.add_argument('--cls_loss_coef', default=2, type=float)
-    parser.add_argument('--bbox_loss_coef', default=5, type=float)
-    parser.add_argument('--giou_loss_coef', default=2, type=float)
-    parser.add_argument('--focal_alpha', default=0.25, type=float)
+    parser.add_argument('--ce_loss_coef', default=1, type=float)
+    parser.add_argument('--coords_loss_coef', default=1, type=float)
 
     # Parameters: Dataset
     parser.add_argument('--train_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/train_comrefV2V_3Dproj.h5",

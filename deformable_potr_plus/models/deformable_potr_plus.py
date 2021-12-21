@@ -439,7 +439,7 @@ def build(args):
         two_stage=args.two_stage,
     )
 
-    weight_dict = {"loss_coords": 1, "labels": 1}
+    weight_dict = {"loss_coords": args.coords_loss_coef, "loss_ce": args.ce_loss_coef}
     losses = ['coords', "labels"]
 
     criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses, cube_size=args.cube_size)
