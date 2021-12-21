@@ -141,6 +141,8 @@ class DeformablePOTR(nn.Module):
         """
 
         if not isinstance(samples, NestedTensor):
+            print(type(samples))
+            print(samples)
             samples = nested_tensor_from_tensor_list(samples)
 
         features, pos = self.backbone(samples)
