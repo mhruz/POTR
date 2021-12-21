@@ -272,7 +272,7 @@ class SetCriterion(nn.Module):
         losses = {'loss_ce': loss_ce}
 
         # Only for informative logging purposes
-        losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+        losses['class_error'] = 100 - accuracy(src_logits[idx].cuda(), target_classes_o.cuda())[0]
 
         return losses
 
