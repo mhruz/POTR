@@ -320,7 +320,8 @@ def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
     # TODO make this more general
 
     if tensor_list[0].ndim == 2:
-        tensor_list = [tensor.unsqueeze(dim=0).expand(3, -1, -1) for tensor in tensor_list]
+        # TODO: Make sure that this works
+        tensor_list = [tensor.unsqueeze(0).expand(3, 224, 224) for tensor in tensor_list]
 
     if tensor_list[0].ndim == 3:
         # TODO make it support different-sized images
