@@ -81,6 +81,12 @@ class HungarianMatcher(nn.Module):
             # Compute the L2 cost between boxes
             cost_coord = torch.cdist(out_coord, tgt_coord, p=2)
 
+            print("Coord cost")
+            print(cost_coord)
+
+            print("Class cost")
+            print(cost_coord)
+
             # Final cost matrix
             C = self.cost_coord * cost_coord + self.cost_class * cost_class
             C = C.view(bs, num_queries, -1).cpu()
