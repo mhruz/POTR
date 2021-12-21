@@ -321,7 +321,7 @@ class SetCriterion(nn.Module):
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices))
 
-        logging.info(str(losses))
+        # logging.info(str(losses))
 
         return losses
 
