@@ -176,6 +176,7 @@ def main(args):
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)
+    print("!!!", type(dataset_train))
 
     if args.distributed:
         if args.cache_mode:
