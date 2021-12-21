@@ -318,6 +318,10 @@ def _max_by_axis(the_list):
 
 def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
     # TODO make this more general
+
+    if tensor_list[0].ndim == 2:
+        tensor_list = [tensor.unsqueeze(dim=0) for tensor in tensor_list]
+
     if tensor_list[0].ndim == 3:
         # TODO make it support different-sized images
         max_size = _max_by_axis([list(img.shape) for img in tensor_list])
@@ -332,22 +336,9 @@ def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
             m[: img.shape[1], :img.shape[2]] = False
 
-    if tensor_list[0].ndim == 2:
-        # TODO make it support different-sized images
-        max_size = _max_by_axis([list(img.shape) for img in tensor_list])
-        # min_size = tuple(min(s) for s in zip(*[img.shape for img in tensor_list]))
-        batch_shape = [len(tensor_list)] + max_size
-        b, h, w = batch_shape
-        dtype = tensor_list[0].dtype
-        device = tensor_list[0].device
-        tensor = torch.zeros(batch_shape, dtype=dtype, device=device)
-        mask = torch.ones((b, h, w), dtype=torch.bool, device=device)
-        for img, pad_img, m in zip(tensor_list, tensor, mask):
-            pad_img[: img.shape[0], : img.shape[1]].copy_(img)
-            m[: img.shape[0], :img.shape[1]] = False
-
     else:
         raise ValueError('not supported')
+
     return NestedTensor(tensor, mask)
 
 
