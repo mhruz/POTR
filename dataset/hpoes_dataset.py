@@ -274,6 +274,8 @@ class HPOESOberwegerDataset(torch_data.Dataset):
 
         label = torch.from_numpy(np.asarray(label))
 
+        print(depth_map.shape, label.shape)
+
         return depth_map, label
 
     def __len__(self):
