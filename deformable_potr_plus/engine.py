@@ -83,8 +83,13 @@ def evaluate(model, criterion, data_loader, device, print_freq=10, log_wandb=Fal
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
 
+        # Calculate L2 distance once outputs are matches using Hungarian algorithm
         l2_pred_error_distances.append(criterion.get_avg_L2_prediction_error_hungarian_matcher_decoding(outputs, targets))
+
+        # Calculate L2 distance for output averaging per predicted class
         l2_pred_error_distances_result_averaging.append(criterion.calculate_avg_L2_distance(model.convert_outputs_average_decoding(outputs), torch.stack(targets)))
+
+        # TODO: Any future decoding implementation metrics to be added here
 
         metric_logger.update(loss=sum(loss_dict.values()))
 

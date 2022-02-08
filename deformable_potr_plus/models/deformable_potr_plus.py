@@ -96,11 +96,9 @@ class DeformablePOTR(nn.Module):
         self.with_box_refine = with_box_refine
         self.two_stage = two_stage
 
-        # TODO: Is this necessary?
         prior_prob = 0.01
         bias_value = -math.log((1 - prior_prob) / prior_prob)
         self.class_embed.bias.data = torch.ones(num_classes) * bias_value
-        # END OF TODO
 
         nn.init.constant_(self.bbox_embed.layers[-1].weight.data, 0)
         nn.init.constant_(self.bbox_embed.layers[-1].bias.data, 0)
@@ -200,7 +198,7 @@ class DeformablePOTR(nn.Module):
 
     def convert_outputs_average_decoding(self, model_outputs):
         """
-        Decodes the resulting coordinates by averaging all queries which predicted (claimed) to be of the given class.
+        Decodes the resulting coordinates by averaging all queries which predicted (claimed) to be a the given class.
         
         :param model_outputs: Outputs from the DeformablePOTR model
         :return: Predicted averaged coordinates tensor (batch, num_class, num_dim)
@@ -324,8 +322,6 @@ class SetCriterion(nn.Module):
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices))
 
-        # logging.info(str(losses))
-
         return losses
 
     def get_avg_L2_prediction_error_hungarian_matcher_decoding(self, outputs, targets):
@@ -333,8 +329,8 @@ class SetCriterion(nn.Module):
         Decodes the outputs using Hungarian matcher and calculates the average L2 distance (prediction error) per batch
         per single joint.
 
-        :param outputs:
-        :param targets:
+        :param outputs: Outputs from the model
+        :param targets: Target joint coordinates
         :return: Average prediction error (in millimeters)
         """
 
@@ -355,8 +351,8 @@ class SetCriterion(nn.Module):
         """
         Calculates the average L2 distance (prediction error) per batch per single joint.
 
-        :param output_coords:
-        :param target_coords:
+        :param output_coords: Outputs from the model
+        :param target_coords: Target joint coordinates
         :return: Average prediction error (in millimeters)
         """
 
