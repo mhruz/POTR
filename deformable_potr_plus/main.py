@@ -176,7 +176,6 @@ def main(args):
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)
-    print("!!!", type(dataset_train))
 
     if args.distributed:
         if args.cache_mode:
@@ -200,11 +199,6 @@ def main(args):
     if args.eval:
         data_loader_eval = DataLoader(dataset_eval, args.batch_size, sampler=sampler_eval, drop_last=False,
                                       num_workers=args.num_workers, pin_memory=True)
-
-    # lr_backbone_names = ["backbone.0", "backbone.neck", "input_proj", "transformer.encoder"]
-
-    #for n, p in model_without_ddp.named_parameters():
-    #    print(n)
 
     param_dicts = [
         {
