@@ -479,6 +479,6 @@ class HPOESSequentialDataset(torch_data.Dataset):
     def __len__(self):
         return len(self.data)
 
+
 if __name__ == "__main__":
-    ds = HPOESAdvancedDataset("train_image.h5")
     pass
