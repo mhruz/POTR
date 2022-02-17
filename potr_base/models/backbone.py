@@ -10,6 +10,7 @@ import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
+import timm
 
 from potr_base.util.misc import NestedTensor, is_main_process
 
@@ -86,9 +87,11 @@ class Backbone(BackboneBase):
                  train_backbone: bool,
                  return_interm_layers: bool,
                  dilation: bool):
-        backbone = getattr(torchvision.models, name)(
-            replace_stride_with_dilation=[False, False, dilation],
-            pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
+        # backbone = getattr(torchvision.models, name)(
+        #     replace_stride_with_dilation=[False, False, dilation],
+        #     pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
+        backbone = timm.create_model(name, pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
+        # m = timm.create_model('resnest26d', features_only=True, pretrained=True)
         num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
@@ -117,3 +120,12 @@ def build_backbone(args):
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
+
+
+def get_model(architecture_name, target_size, pretrained=False):
+    net = timm.create_model(architecture_name, pretrained=pretrained)
+    net_cfg = net.default_cfg
+    last_layer = net_cfg['classifier']
+    num_ftrs = getattr(net, last_layer).in_features
+    setattr(net, last_layer, nn.Linear(num_ftrs, target_size))
+    return net
