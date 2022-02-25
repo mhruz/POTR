@@ -6,9 +6,7 @@ from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
-import torchvision
 from torch import nn
-from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
 import timm
 
@@ -61,17 +59,18 @@ class BackboneBase(nn.Module):
     def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
         super().__init__()
         for name, parameter in backbone.named_parameters():
-            if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+            if not train_backbone:
                 parameter.requires_grad_(False)
         if return_interm_layers:
-            return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+            self.return_index = -4
         else:
-            return_layers = {'layer4': "0"}
-        self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+            self.return_index = -1
+        self.body = backbone
         self.num_channels = num_channels
 
     def forward(self, tensor_list: NestedTensor):
-        xs = self.body(tensor_list.tensors)
+        # xs = self.body(tensor_list.tensors)
+        xs = dict(enumerate(self.body(tensor_list.tensors)[self.return_index:]))
         out: Dict[str, NestedTensor] = {}
         for name, x in xs.items():
             m = tensor_list.mask
@@ -90,9 +89,9 @@ class Backbone(BackboneBase):
         # backbone = getattr(torchvision.models, name)(
         #     replace_stride_with_dilation=[False, False, dilation],
         #     pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
-        backbone = timm.create_model(name, pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
-        # m = timm.create_model('resnest26d', features_only=True, pretrained=True)
-        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
+        backbone = timm.create_model(name, pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d,
+                                     features_only=True)
+        num_channels = backbone(torch.zeros(1, 3, 224, 224))[-1].shape[1]
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
 

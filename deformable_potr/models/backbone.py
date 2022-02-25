@@ -14,10 +14,9 @@ from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
-import torchvision
 from torch import nn
-from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
+import timm
 
 from deformable_potr.util.misc import NestedTensor, is_main_process
 from deformable_potr.models.position_encoding import build_position_encoding
@@ -68,21 +67,25 @@ class BackboneBase(nn.Module):
     def __init__(self, backbone: nn.Module, train_backbone: bool, return_interm_layers: bool):
         super().__init__()
         for name, parameter in backbone.named_parameters():
-            if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+            if not train_backbone:
                 parameter.requires_grad_(False)
         if return_interm_layers:
-            # return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
-            return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
+            # return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
+            self.return_index = -3
             self.strides = [8, 16, 32]
-            self.num_channels = [512, 1024, 2048]
+            self.num_channels = [backbone(torch.zeros(1, 3, 224, 224))[-3].shape[1],
+                                 backbone(torch.zeros(1, 3, 224, 224))[-2].shape[1],
+                                 backbone(torch.zeros(1, 3, 224, 224))[-1].shape[1]]
         else:
-            return_layers = {'layer4': "0"}
+            # return_layers = {'layer4': "0"}
+            self.return_index = -1
             self.strides = [32]
-            self.num_channels = [2048]
-        self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+            self.num_channels = [backbone(torch.zeros(1, 3, 224, 224))[-1].shape[1]]
+        self.body = backbone
+        # self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     def forward(self, tensor_list: NestedTensor):
-        xs = self.body(tensor_list.tensors)
+        xs = dict(enumerate(self.body(tensor_list.tensors)[self.return_index:]))
         out: Dict[str, NestedTensor] = {}
         for name, x in xs.items():
             m = tensor_list.mask
@@ -99,10 +102,11 @@ class Backbone(BackboneBase):
                  return_interm_layers: bool,
                  dilation: bool):
         norm_layer = FrozenBatchNorm2d
-        backbone = getattr(torchvision.models, name)(
-            replace_stride_with_dilation=[False, False, dilation],
-            pretrained=is_main_process(), norm_layer=norm_layer)
-        assert name not in ('resnet18', 'resnet34'), "number of channels are hard coded"
+        # backbone = getattr(torchvision.models, name)(
+        #     replace_stride_with_dilation=[False, False, dilation],
+        #     pretrained=is_main_process(), norm_layer=norm_layer)
+        backbone = timm.create_model(name, pretrained=is_main_process(), norm_layer=norm_layer,
+                                     features_only=True)
         super().__init__(backbone, train_backbone, return_interm_layers)
         if dilation:
             self.strides[-1] = self.strides[-1] // 2
