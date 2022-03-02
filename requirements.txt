@@ -9,3 +9,5 @@ pandas
 seaborn
 scipy
 cython
+pycocotools
+timm
