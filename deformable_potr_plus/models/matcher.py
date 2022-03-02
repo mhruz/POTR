@@ -78,16 +78,8 @@ class HungarianMatcher(nn.Module):
             pos_cost_class = alpha * ((1 - out_prob) ** gamma) * (-(out_prob + 1e-8).log())
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
 
-            print(out_coord.shape, tgt_coord.shape)
-
             # Compute the L2 cost between boxes
             cost_coord = torch.cdist(out_coord, tgt_coord, p=2)
-
-            print("Coord cost")
-            print(cost_coord)
-
-            print("Class cost")
-            print(cost_coord)
 
             # Final cost matrix
             C = self.cost_coord * cost_coord + self.cost_class * cost_class
