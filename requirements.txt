@@ -11,3 +11,4 @@ scipy
 cython
 pycocotools
 timm
+albumentations
