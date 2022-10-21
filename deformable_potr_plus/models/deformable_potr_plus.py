@@ -217,7 +217,7 @@ class DeformablePOTR(nn.Module):
         avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
         avg_output_coords = torch.stack([torch.stack(target_batch) for target_batch in avg_pred_coords])
 
-        return avg_output_coords
+        return avg_output_coords.to(model_outputs["pred_coords"].device)
 
 
 class SetCriterion(nn.Module):
@@ -361,10 +361,13 @@ class SetCriterion(nn.Module):
             # the number of targets and classes) and convert this relative distance form (as the dataset target values
             # are on the [-1; 1] range to absolute mms
             loss_coords = F.mse_loss(output_coords, target_coords, reduction="none")
-            res = (math.sqrt(float(torch.sum(loss_coords))) / len(target_coords) / self.num_classes) * (self.cube_size * 2)
 
-        except:
-            logging.warning("A problem ocurred during L2 error calculation!")
+            mean_loss_coords = float(torch.mean(torch.sqrt(torch.sum(loss_coords, dim=1))))
+            res = mean_loss_coords * (self.cube_size * 0.5)
+
+        except Exception as e:
+            print(e)
+            logging.warning("A problem occurred during L2 error calculation!")
             return 0
 
         return res

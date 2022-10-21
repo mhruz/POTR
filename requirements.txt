@@ -10,5 +10,7 @@ seaborn
 scipy
 cython
 pycocotools
+albumentations
+pycocotools
 timm
 albumentations
