@@ -163,15 +163,18 @@ class HPOESOberwegerDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, encoded=True, transform=None, p_augment_3d=0.0, mode: str = 'test'):
+    def __init__(self, dataset_filename: str, data_resolution: int, encoded=True,
+                 transform=None, p_augment_3d=0.0, mode: str = 'test'):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
 
         :param dataset_filename: Path to the h5 file
+        :param data_resolution: resolution of the input data
         :param transform: Any data transformation to be applied (default: None)
         :param encoded: Whether to read only encoded data and decode them at runtime (default: True)
         :param mode: train, eval, test
         """
+        self.data_resolution = data_resolution
         self.encoded = encoded
         self.p_augment_3d = p_augment_3d
 
@@ -226,7 +229,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             transformed = preprocessing(image=depth_map)
             depth_map = transformed["image"]
             depth_map = torch.from_numpy(depth_map)
-            depth_map = depth_map.unsqueeze(0).expand(3, 224, 224)
+            depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution, self.data_resolution)
             if label is not None:
                 label = torch.from_numpy(np.asarray(label))
                 return depth_map, label
@@ -270,7 +273,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             # label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
 
         depth_map = torch.from_numpy(depth_map)
-        depth_map = depth_map.unsqueeze(0).expand(3, 224, 224)
+        depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution, self.data_resolution)
 
         label = torch.from_numpy(np.asarray(label))
 

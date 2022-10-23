@@ -78,6 +78,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path',
                         default="/Users/matyasbohacek/Documents/Academics/Datasets/Custom/FAV_Train_Sample/train_image.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
+    parser.add_argument('--data_resolution', default=224, type=int, help="Resolution of the input data.")
 
     parser.add_argument('--output_dir', default='', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default="cpu", help="Device to be used for training and testing")
@@ -151,14 +152,16 @@ def main(args):
     #                                       encoded=args.encoded)
 
     if args.sequence_length == 0:
-        dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
-                                                                                    encoded=args.encoded, mode='train')
+        dataset_train = HPOESOberwegerDataset(args.train_data_path, data_resolution=args.data_resolution,
+                                              transform=augmentation(p_apply=args.p_augment),
+                                              encoded=args.encoded, mode='train')
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
                                                transform=args.p_augment, encoded=args.encoded, mode='train')
     if args.eval:
         if args.sequence_length == 0:
-            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded, mode='eval')
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, data_resolution=args.data_resolution,
+                                                 encoded=args.encoded, mode='eval')
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded, mode='eval')

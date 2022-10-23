@@ -100,6 +100,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
     parser.add_argument('--cube_size', default=250, type=int, help="The milimeter size of the cube in which the hand coordinates are located")
+    parser.add_argument('--data_resolution', default=224, type=int, help="Resolution of the input data.")
 
     parser.add_argument('--output_dir', default='def_potr_plus_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")
@@ -165,14 +166,16 @@ def main(args):
     print("Number of parameters:", n_parameters)
 
     if args.sequence_length == 0:
-        dataset_train = HPOESOberwegerDataset(args.train_data_path, transform=augmentation(p_apply=args.p_augment),
+        dataset_train = HPOESOberwegerDataset(args.train_data_path, data_resolution=args.data_resolution,
+                                              transform=augmentation(p_apply=args.p_augment),
                                               encoded=args.encoded, p_augment_3d=args.p_augment, mode='train')
     else:
         dataset_train = HPOESSequentialDataset(args.train_data_path, sequence_length=args.sequence_length,
                                                transform=args.p_augment, encoded=args.encoded)
     if args.eval:
         if args.sequence_length == 0:
-            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, encoded=args.encoded, mode='eval')
+            dataset_eval = HPOESOberwegerDataset(args.eval_data_path, data_resolution=args.data_resolution,
+                                                 encoded=args.encoded, mode='eval')
         else:
             dataset_eval = HPOESSequentialDataset(args.eval_data_path, sequence_length=args.sequence_length,
                                                   encoded=args.encoded)
