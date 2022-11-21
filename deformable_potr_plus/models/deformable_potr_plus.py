@@ -313,7 +313,7 @@ class SetCriterion(nn.Module):
 
         targets = [{
             "coords": target,
-            "labels": torch.tensor(list(range(14)))
+            "labels": torch.tensor(list(range(target.shape[0])))
         } for target in targets]
 
         indices = self.matcher(outputs, targets)
@@ -324,26 +324,28 @@ class SetCriterion(nn.Module):
 
         return losses
 
-    def get_avg_L2_prediction_error_hungarian_matcher_decoding(self, outputs, targets):
+    def get_avg_L2_prediction_error_hungarian_matcher_decoding(self, outputs, targets, cubes=None):
         """
         Decodes the outputs using Hungarian matcher and calculates the average L2 distance (prediction error) per batch
         per single joint.
 
         :param outputs: Outputs from the model
         :param targets: Target joint coordinates
+        :param cubes: Cube sizes of individual data-points, if not provided, the default value is used
         :return: Average prediction error (in millimeters)
         """
 
         targets = [{
             "coords": target,
-            "labels": torch.tensor(list(range(14)))
+            "labels": torch.tensor(list(range(target.shape[0])))
         } for target in targets]
 
         indices = self.matcher(outputs, targets)
 
         idx = self._get_src_permutation_idx(indices)
-        src_coords = outputs["pred_coords"][idx]
-        target_coords = torch.cat([t["coords"][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        # src_coords = outputs["pred_coords"][idx]
+        src_coords = (outputs["pred_coords"] * cubes.unsqueeze(1).to(outputs["pred_coords"].device) / 2.0)[idx]
+        target_coords = torch.cat([t["coords"][i] * cubes[c].to(t["coords"].device) for c, (t, (_, i)) in enumerate(zip(targets, indices))], dim=0)
 
         return self.calculate_avg_L2_distance(src_coords, target_coords)
 
@@ -357,20 +359,17 @@ class SetCriterion(nn.Module):
         """
 
         try:
-            # Obtain the average L2 distance per a single joint estimation (therefore the overall result is divided by
-            # the number of targets and classes) and convert this relative distance form (as the dataset target values
-            # are on the [-1; 1] range to absolute mms
+            # Obtain the average L2 distance per a single joint estimation
             loss_coords = F.mse_loss(output_coords, target_coords, reduction="none")
 
             mean_loss_coords = float(torch.mean(torch.sqrt(torch.sum(loss_coords, dim=1))))
-            res = mean_loss_coords * (self.cube_size * 0.5)
 
         except Exception as e:
             print(e)
             logging.warning("A problem occurred during L2 error calculation!")
             return 0
 
-        return res
+        return mean_loss_coords
 
 
 class PostProcess(nn.Module):

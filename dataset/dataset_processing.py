@@ -42,6 +42,7 @@ def load_hpoes_data(filename: str, mode: str):
 
     output_depth_maps = []
     output_labels = []
+    output_cubes = []
 
     for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
@@ -49,11 +50,13 @@ def load_hpoes_data(filename: str, mode: str):
         data = np.load(_file)["arr_0"]
         output_depth_maps.append(data)
 
+        output_cubes.append(data_file["cube"][record_index])
+
         if mode != 'test':
             labels = data_file["labels"][record_index]
             output_labels.append(labels)
 
-    return {"data": output_depth_maps, "labels": output_labels}
+    return {"data": output_depth_maps, "labels": output_labels, "cubes": output_cubes}
 
 
 def load_encoded_hpoes_data(filename: str, mode: str):
@@ -73,16 +76,19 @@ def load_encoded_hpoes_data(filename: str, mode: str):
 
     output_depth_maps = []
     output_labels = []
+    output_cubes = []
 
     for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
         output_depth_maps.append(pdata)
 
+        output_cubes.append(data_file["cube"][record_index])
+
         if mode != 'test':
             labels = data_file["labels"][record_index]
             output_labels.append(labels)
 
-    return {"data": output_depth_maps, "labels": output_labels}
+    return {"data": output_depth_maps, "labels": output_labels, "cubes": output_cubes}
 
 
 def aug_dilate(image, **kwargs):

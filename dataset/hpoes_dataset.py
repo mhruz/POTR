@@ -196,6 +196,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         self.labels = labels
         self.transform = transform
         self.mode = mode
+        self.cubes = loaded_data["cubes"]
 
     @staticmethod
     def preprocessing():
@@ -230,10 +231,13 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             depth_map = transformed["image"]
             depth_map = torch.from_numpy(depth_map)
             depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution, self.data_resolution)
+
+            cube = torch.Tensor(self.cubes[idx])
+
             if label is not None:
                 label = torch.from_numpy(np.asarray(label))
-                return depth_map, label
-            return depth_map
+                return depth_map, label, cube
+            return depth_map, cube
 
         # Perform any additionally desired transformations
         if self.transform:
@@ -277,7 +281,9 @@ class HPOESOberwegerDataset(torch_data.Dataset):
 
         label = torch.from_numpy(np.asarray(label))
 
-        return depth_map, label
+        cube = torch.Tensor(self.cubes[idx])
+
+        return depth_map, label, cube
 
     def __len__(self):
         return len(self.data)

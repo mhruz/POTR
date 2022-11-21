@@ -25,14 +25,13 @@ from deformable_potr_plus.datasets.data_prefetcher import data_prefetcher
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, log_wandb=False):
+                    device: torch.device, epoch: int, log_wandb=False, print_freq=200):
     model.train()
     criterion.train()
     header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 200
     losses_all = []
 
-    for item_index, (samples, targets) in enumerate(data_loader):
+    for item_index, (samples, targets, cubes) in enumerate(data_loader):
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
@@ -76,7 +75,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10, log_wandb=Fal
     l2_pred_error_distances = []
     l2_pred_error_distances_result_averaging = []
 
-    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+    for samples, targets, cubes in metric_logger.log_every(data_loader, print_freq, header):
         samples = [item.to(device, dtype=torch.float32) for item in samples]
         targets = [item.to(device) for item in targets]
 
@@ -84,7 +83,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=10, log_wandb=Fal
         loss_dict = criterion(outputs, targets)
 
         # Calculate L2 distance once outputs are matches using Hungarian algorithm
-        l2_pred_error_distances.append(criterion.get_avg_L2_prediction_error_hungarian_matcher_decoding(outputs, targets))
+        l2_pred_error_distances.append(criterion.get_avg_L2_prediction_error_hungarian_matcher_decoding(outputs, targets, cubes))
 
         # Calculate L2 distance for output averaging per predicted class
         l2_pred_error_distances_result_averaging.append(criterion.calculate_avg_L2_distance(model.convert_outputs_average_decoding(outputs), torch.stack(targets)))

@@ -129,7 +129,7 @@ def match_name_keywords(n, name_keywords):
 def main(args):
     if args.wandb_key:
         wandb.login(key=args.wandb_key)
-        wandb.init(project="def-potr", entity="matyasbohacek")
+        wandb.init(project="depotr_plus", entity="mhruz")
         wandb.config = {
             "learning_rate": args.lr,
             "epochs": args.epochs,
@@ -312,8 +312,8 @@ def main(args):
                         'lr_scheduler': lr_scheduler.state_dict(),
                         'epoch': epoch,
                         'args': args,
-                   }, checkpoint_path)
-
+                    }, checkpoint_path)
+                    
                 except:
                     print("Checkpointing failed.")
                     logging.info("Checkpointing failed.")
