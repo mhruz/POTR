@@ -1,3 +1,5 @@
+import logging
+
 import h5py
 import io
 import matplotlib
@@ -6,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import albumentations as A
 import cv2
+
+logging.basicConfig(level=logging.NOTSET)
 
 
 def visualize_hpoes_data(filename: str):
@@ -26,16 +30,17 @@ def visualize_hpoes_data(filename: str):
         plt.show()
 
 
-def load_hpoes_data(filename: str, mode: str):
+def load_hpoes_data(filename: str, mode: str, data_resolution):
     """
     Processes the data present in the given h5 file (cutouts of the depth maps, where hands interact with objects).
 
     :param mode: train, eval, test
     :param filename: Path to the h5 file
+    :param data_resolution: desired resolution of data
     :return: Dictionary with the following items:
-        - data: List of numpy.ndarrays with the depth maps (224x224)
+        - data: List of numpy.ndarrays with the depth maps
         - labels: List of numpy.ndarrays with the 3D coordinates of the individual hand joints (in millimeters, relative
-        to the center of the image) (21x3)
+        to the center of the image)
     """
 
     data_file = h5py.File(filename)
@@ -44,10 +49,19 @@ def load_hpoes_data(filename: str, mode: str):
     output_labels = []
     output_cubes = []
 
+    resolution_warning = False
+    original_resolution = None
+
     for record_index in range(len(data_file["images"])):
+    # for record_index in range(10):
         pdata = data_file["images"][str(record_index)][:].tostring()
         _file = io.BytesIO(pdata)
         data = np.load(_file)["arr_0"]
+        if data.shape[0] != data_resolution[1] or data.shape[1] != data_resolution[0]:
+            resolution_warning = True
+            original_resolution = (data.shape[1], data.shape[0])
+            data = cv2.resize(data, data_resolution)
+
         output_depth_maps.append(data)
 
         output_cubes.append(data_file["cube"][record_index])
@@ -56,10 +70,15 @@ def load_hpoes_data(filename: str, mode: str):
             labels = data_file["labels"][record_index]
             output_labels.append(labels)
 
+    if resolution_warning:
+        logging.warning(
+            "Data resolution does not match the desired resolution ({} vs {})".format(original_resolution,
+                                                                                      data_resolution))
+
     return {"data": output_depth_maps, "labels": output_labels, "cubes": output_cubes}
 
 
-def load_encoded_hpoes_data(filename: str, mode: str):
+def load_encoded_hpoes_data(filename: str, mode: str, data_resolution):
     """
     Reads the encoded hand pose data to memory. The decoding needs to be performed outside of this function. This is
     suitable, when the decoded data do not fit into memory.
@@ -81,6 +100,16 @@ def load_encoded_hpoes_data(filename: str, mode: str):
     for record_index in range(len(data_file["images"])):
         pdata = data_file["images"][str(record_index)][:].tostring()
         output_depth_maps.append(pdata)
+
+        # test for the resolution
+        if record_index == 0:
+            _file = io.BytesIO(pdata)
+            data = np.load(_file)["arr_0"]
+            if data.shape[0] != data_resolution[1] or data.shape[1] != data_resolution[0]:
+                logging.warning(
+                    "Data resolution does not match the desired resolution ({} vs {})".format(
+                        data.shape[::-1],
+                        data_resolution))
 
         output_cubes.append(data_file["cube"][record_index])
 

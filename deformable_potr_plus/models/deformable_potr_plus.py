@@ -209,11 +209,11 @@ class DeformablePOTR(nn.Module):
 
         # Convert outputs to averaged class joints
         pred_class = torch.argmax(model_outputs["pred_logits"], dim=2)
-        all_pred_coords = [[[] for _ in range(14)] for _ in range(len(model_outputs["pred_logits"]))]
+        all_pred_coords = [[[] for _ in range(model_outputs["pred_logits"].shape[2] - 1)] for _ in range(len(model_outputs["pred_logits"]))]
 
         for target_i in range(len(model_outputs["pred_logits"])):
             for i, c in enumerate(pred_class[target_i, :]):
-                if c.item() != 14:
+                if c.item() != model_outputs["pred_logits"].shape[2] - 1:
                     all_pred_coords[target_i][c.item()].append(model_outputs["pred_coords"][target_i, i])
 
         all_pred_coords = [[torch.stack(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][

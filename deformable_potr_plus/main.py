@@ -100,7 +100,7 @@ def get_args_parser():
     parser.add_argument('--eval_data_path', default="/storage/plzen4-ntis/projects/cv/hpoes2/data/NYU/test_1_comrefV2V_3Dproj.h5",
                         type=str, help="Path to the evaluation dataset H5 file.")
     parser.add_argument('--cube_size', default=250, type=int, help="The milimeter size of the cube in which the hand coordinates are located")
-    parser.add_argument('--data_resolution', default=224, type=int, help="Resolution of the input data.")
+    parser.add_argument('--data_resolution', default=(224, 224), type=int, nargs=2, help="Resolution of the input data. Width x Height")
 
     parser.add_argument('--output_dir', default='def_potr_plus_0', help="Path for saving of the resulting weights and overall model")
     parser.add_argument('--device', default='cuda', help="Device to be used for training and testing")

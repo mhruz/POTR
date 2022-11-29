@@ -163,7 +163,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
     data: [np.ndarray]
     labels: [np.ndarray]
 
-    def __init__(self, dataset_filename: str, data_resolution: int, encoded=True,
+    def __init__(self, dataset_filename: str, data_resolution, encoded=True,
                  transform=None, p_augment_3d=0.0, mode: str = 'test'):
         """
         Initiates the HPOESDataset with the pre-loaded data from the h5 file.
@@ -179,9 +179,9 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         self.p_augment_3d = p_augment_3d
 
         if not encoded:
-            loaded_data = load_hpoes_data(dataset_filename, mode=mode)
+            loaded_data = load_hpoes_data(dataset_filename, mode=mode, data_resolution=data_resolution)
         else:
-            loaded_data = load_encoded_hpoes_data(dataset_filename, mode=mode)
+            loaded_data = load_encoded_hpoes_data(dataset_filename, mode=mode, data_resolution=data_resolution)
 
         data = loaded_data["data"]
         if mode == 'test':
@@ -216,6 +216,8 @@ class HPOESOberwegerDataset(torch_data.Dataset):
         if self.encoded:
             _file = io.BytesIO(self.data[idx])
             depth_map = np.load(_file)["arr_0"]
+            if depth_map.shape[0] != self.data_resolution[1] or depth_map.shape[1] != self.data_resolution[0]:
+                depth_map = cv2.resize(depth_map, self.data_resolution)
 
         else:
             depth_map = self.data[idx]
@@ -230,7 +232,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             transformed = preprocessing(image=depth_map)
             depth_map = transformed["image"]
             depth_map = torch.from_numpy(depth_map)
-            depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution, self.data_resolution)
+            depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution[1], self.data_resolution[0])
 
             cube = torch.Tensor(self.cubes[idx])
 
@@ -277,7 +279,7 @@ class HPOESOberwegerDataset(torch_data.Dataset):
             # label = (label - depth_map.shape[0] // 2) / (depth_map.shape[0] // 2)
 
         depth_map = torch.from_numpy(depth_map)
-        depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution, self.data_resolution)
+        depth_map = depth_map.unsqueeze(0).expand(3, self.data_resolution[1], self.data_resolution[0])
 
         label = torch.from_numpy(np.asarray(label))
 
