@@ -21,13 +21,13 @@ import math
 
 from deformable_potr_plus.util import box_ops
 from deformable_potr_plus.util.misc import (NestedTensor, nested_tensor_from_tensor_list,
-                       accuracy, get_world_size, interpolate,
-                       is_dist_avail_and_initialized, inverse_sigmoid)
+                                            accuracy, get_world_size, interpolate,
+                                            is_dist_avail_and_initialized, inverse_sigmoid)
 
 from deformable_potr_plus.models.backbone import build_backbone
 from deformable_potr_plus.models.matcher import build_matcher
 from deformable_potr_plus.models.segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
-                           dice_loss, sigmoid_focal_loss)
+                                                      dice_loss, sigmoid_focal_loss)
 from deformable_potr_plus.models.deformable_transformer import build_deformable_transformer
 import copy
 
@@ -39,7 +39,8 @@ def _get_clones(module, N):
 class DeformablePOTR(nn.Module):
     """ Deformable POTR module for joint coordinates regression """
 
-    def __init__(self, backbone, transformer, num_classes, num_queries, num_feature_levels, aux_loss=True, with_box_refine=False,
+    def __init__(self, backbone, transformer, num_classes, num_queries, num_feature_levels, aux_loss=True,
+                 with_box_refine=False,
                  two_stage=False):
         """ Initializes the model.
         Parameters:
@@ -64,7 +65,7 @@ class DeformablePOTR(nn.Module):
         self.num_feature_levels = num_feature_levels
 
         if not two_stage:
-            self.query_embed = nn.Embedding(num_queries, hidden_dim*2)
+            self.query_embed = nn.Embedding(num_queries, hidden_dim * 2)
 
         if num_feature_levels > 1:
             num_backbone_outs = len(backbone.strides)
@@ -169,7 +170,9 @@ class DeformablePOTR(nn.Module):
         if not self.two_stage:
             query_embeds = self.query_embed.weight
 
-        hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks, pos, query_embeds)
+        hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks,
+                                                                                                            pos,
+                                                                                                            query_embeds)
 
         outputs_classes = []
         outputs_coords = []
@@ -213,8 +216,12 @@ class DeformablePOTR(nn.Module):
                 if c.item() != 14:
                     all_pred_coords[target_i][c.item()].append(model_outputs["pred_coords"][target_i, i])
 
-        all_pred_coords = [[torch.stack(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][joint_i] else torch.zeros(1, 3) for joint_i in range(14)] for target_i in range(len(model_outputs["pred_logits"]))]
-        avg_pred_coords = [[torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])]) for joint_batch in target_batch] for target_batch in all_pred_coords]
+        all_pred_coords = [[torch.stack(all_pred_coords[target_i][joint_i]) if all_pred_coords[target_i][
+            joint_i] else torch.zeros(1, 3) for joint_i in range(14)] for target_i in
+                           range(len(model_outputs["pred_logits"]))]
+        avg_pred_coords = [
+            [torch.Tensor([torch.mean(joint_batch[:, 0]), torch.mean(joint_batch[:, 1]), torch.mean(joint_batch[:, 2])])
+             for joint_batch in target_batch] for target_batch in all_pred_coords]
         avg_output_coords = torch.stack([torch.stack(target_batch) for target_batch in avg_pred_coords])
 
         return avg_output_coords.to(model_outputs["pred_coords"].device)
@@ -261,7 +268,8 @@ class SetCriterion(nn.Module):
         target_classes_onehot.scatter_(2, target_classes.unsqueeze(-1), 1)
 
         target_classes_onehot = target_classes_onehot[:, :, :-1]
-        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, self.num_classes, alpha=self.focal_alpha, gamma=2) * \
+        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, self.num_classes, alpha=self.focal_alpha,
+                                     gamma=2) * \
                   src_logits.shape[1]
         losses = {'loss_ce': loss_ce}
 
@@ -345,7 +353,8 @@ class SetCriterion(nn.Module):
         idx = self._get_src_permutation_idx(indices)
         # src_coords = outputs["pred_coords"][idx]
         src_coords = (outputs["pred_coords"] * cubes.unsqueeze(1).to(outputs["pred_coords"].device) / 2.0)[idx]
-        target_coords = torch.cat([t["coords"][i] * cubes[c].to(t["coords"].device) for c, (t, (_, i)) in enumerate(zip(targets, indices))], dim=0)
+        target_coords = torch.cat([t["coords"][i] * cubes[c].to(t["coords"].device) / 2.0 for c, (t, (_, i)) in
+                                   enumerate(zip(targets, indices))], dim=0)
 
         return self.calculate_avg_L2_distance(src_coords, target_coords)
 
@@ -395,7 +404,7 @@ class PostProcess(nn.Module):
         topk_boxes = topk_indexes // out_logits.shape[2]
         labels = topk_indexes % out_logits.shape[2]
         boxes = box_ops.box_cxcywh_to_xyxy(out_bbox)
-        boxes = torch.gather(boxes, 1, topk_boxes.unsqueeze(-1).repeat(1,1,4))
+        boxes = torch.gather(boxes, 1, topk_boxes.unsqueeze(-1).repeat(1, 1, 4))
 
         # and from relative [0, 1] to absolute [0, height] coordinates
         img_h, img_w = target_sizes.unbind(1)
@@ -423,7 +432,6 @@ class MLP(nn.Module):
 
 
 def build(args):
-
     device = torch.device(args.device)
     backbone = build_backbone(args)
     matcher = build_matcher(args)
@@ -443,7 +451,8 @@ def build(args):
     weight_dict = {"loss_coords": args.coords_loss_coef, "loss_ce": args.ce_loss_coef}
     losses = ['coords', "labels"]
 
-    criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses, cube_size=args.cube_size)
+    criterion = SetCriterion(args.num_classes, matcher, weight_dict=weight_dict, losses=losses,
+                             cube_size=args.cube_size)
     criterion.to(device)
 
     return model, criterion
