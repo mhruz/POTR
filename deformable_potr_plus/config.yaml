@@ -1,0 +1,6 @@
+train_data_path:
+  /home/mighty/data/POTR/train_comrefV2V_3Dproj.h5
+num_workers:
+  0
+num_queries:
+  14
