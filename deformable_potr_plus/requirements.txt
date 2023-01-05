@@ -5,3 +5,4 @@ scipy
 git+https://github.com/cocodataset/panopticapi.git
 albumentations
 opencv-python
+wandb

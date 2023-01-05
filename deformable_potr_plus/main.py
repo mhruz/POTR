@@ -44,7 +44,11 @@ def get_args_parser():
     parser.add_argument('--save_epoch', default=5, type=int, help='interval of saving the model (in epochs)')
     parser.add_argument('--clip_max_norm', default=0.1, type=float, help='gradient clipping max norm')
     parser.add_argument('--sgd', action='store_true')
+
+    # Weights and Biases
     parser.add_argument("--wandb_key", default="", type=str, help="API key for optional Weights & Biases monitoring")
+    parser.add_argument("--wandb_project", default="depotr-plus", type=str, help="Name of wandb project")
+    parser.add_argument("--wandb_entity", default="", type=str, help="WandB entity name")
 
     # Parametrs: Deformable DETR Variants
     parser.add_argument('--with_box_refine', default=False, action='store_true')
@@ -129,7 +133,7 @@ def match_name_keywords(n, name_keywords):
 def main(args):
     if args.wandb_key:
         wandb.login(key=args.wandb_key)
-        wandb.init(project="depotr_plus", entity="mhruz")
+        wandb.init(project=args.wandb_project, entity=args.wandb_entity)
         wandb.config = {
             "learning_rate": args.lr,
             "epochs": args.epochs,
