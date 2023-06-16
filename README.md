@@ -34,3 +34,9 @@ sh ./make.sh
 ```
 
 You can then test the CUDA operators by running `python test.py`, where all tests should pass.
+
+### Data Preparation
+```bash
+cd ./utils
+python crops2h5.py ./nyu/train_comrefV2V_3Dproj.json
+```
