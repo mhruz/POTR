@@ -1,0 +1,25 @@
+{
+    "objdir_source": "./datasets/ICVL/Depth/",
+    "trainlabelsfilename": "./datasets/ICVL/labels_unrotated.txt",
+    "bbcomsfilename": "./datasets/ICVL/center_train_refined_unrotated.txt",
+    "cube": [
+        250.0,
+        250.0,
+        250.0
+    ],
+    "dsize": [224 ,224],
+    "di": "DepthImporterICVL",
+    "docom": false,
+    "isbb": false,
+    "islabels": true,
+    "islabels3D": false,
+    "iscom": true,
+    "iscom3D": true,
+    "isOPENGLcoord": false,
+    "numJoints": 16,
+    "objdir_crop": "./tmp/ICVL/train_comrefV2V_3Dproj_crops/",
+    "objdir_json": "./tmp/ICVL/train_comrefV2V_3Dproj_jsons/",
+    "h5file": "./tmp/ICVL/train_comrefV2V_3Dproj.h5",
+    "H5labelformat": "3Dprojection",
+    "H5datagroup": "images"
+}
