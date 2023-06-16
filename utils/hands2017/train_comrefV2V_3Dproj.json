@@ -1,0 +1,24 @@
+{
+    "objdir_source": "./datasets/Hands17/training/images/",
+    "trainlabelsfilename": "./datasets/Hands17/training/Training_Annotation.txt",
+    "bbcomsfilename": "./center_train_refined.txt",
+    "cube": [
+        250.0,
+        250.0,
+        250.0
+    ],
+    "dsize": [224 ,224],
+    "di": "DepthImporterHANDS2017",
+    "docom": false,
+    "isbb": false,
+    "islabels": true,
+    "iscom": true,
+    "iscom3D": true,
+    "isOPENGLcoord": false,
+    "numJoints": 21,
+    "objdir_crop": "./tmp/HANDS2017/train_comrefV2V_3Dproj_crops/",
+    "objdir_json": "./tmp/HANDS2017/train_comrefV2V_3Dproj_jsons/",
+    "h5file": "./tmp/HANDS2017/train_comrefV2V_3Dproj.h5",
+    "H5labelformat": "3Dprojection",
+    "H5datagroup": "images"
+}

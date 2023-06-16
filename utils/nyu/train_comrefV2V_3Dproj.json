@@ -1,0 +1,25 @@
+{
+    "objdir_source": "./nyu/dataset/train/",
+    "trainlabelsfilename": "./nyu/dataset/joint_data_train.txt",
+    "bbcomsfilename": "./nyu/center_train_V2V.txt",
+    "cube": [
+        300.0,
+        300.0,
+        300.0
+    ],
+    "dsize": [224 ,224],
+    "di": "DepthImporterNYU",
+    "docom": false,
+    "isbb": false,
+    "islabels": true,
+    "islabels3D": true,
+    "iscom": true,
+    "iscom3D": true,
+    "isOPENGLcoord": true,
+    "numJoints": 14,
+    "objdir_crop": "./tmp/train_comrefV2V_3Dproj_crops/",
+    "objdir_json": "./tmp/train_comrefV2V_3Dproj_jsons/",
+    "h5file": "./tmp/train_comrefV2V_3Dproj.h5",
+    "H5labelformat": "3Dprojection",
+    "H5datagroup": "images"
+}
